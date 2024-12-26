@@ -53,7 +53,7 @@ class VectorStore:
                 try:
                     # List all indexes
                     indexes = self.pc.list_indexes()
-                    
+                    print(indexes)
                     # Create index if it doesn't exist
                     if index_name not in [index.name for index in indexes]:
                         self.pc.create_index(
@@ -68,7 +68,7 @@ class VectorStore:
                             }
                         )
                         self.log_function("Initialization", f"Created new Pinecone index: {index_name}")
-                    
+                    print(f"Initialized {index_name}")
                     # Connect to the index
                     self.index = self.pc.Index(index_name)
                     
@@ -78,6 +78,7 @@ class VectorStore:
                         top_k=1,
                         include_metadata=True
                     )
+                    # print(f'test_result: {test_result}')
                     self.log_function("Initialization", "Pinecone index connected successfully")
                     
                 except Exception as e:
@@ -122,6 +123,7 @@ class VectorStore:
             
             # Create embedding for content
             vector = self.embed_text(content)
+            print("Embedded document")
             if not vector:
                 return False
             
@@ -139,7 +141,7 @@ class VectorStore:
                 vectors=[(doc_id, vector, full_metadata)],
                 namespace=namespace
             )
-            
+            print("Upserted document")
             # Update cache with new document
             if project_id not in self._document_cache:
                 self._document_cache[project_id] = {}
@@ -477,6 +479,7 @@ class VectorStore:
                 'state_data': state_data
             }
             
+            print("Upserting state")
             self.index.upsert(
                 vectors=[(state_id, vector, metadata)],
                 namespace=namespace

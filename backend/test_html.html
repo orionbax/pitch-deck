@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Test</title>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>WebSocket Test</h1>
+    <input type="text" id="usernameInput" placeholder="Enter username">
+    <input type="password" id="passwordInput" placeholder="Enter password">
+    <input type="text" id="messageInput" placeholder="Enter message">
+    <input type="file" id="fileInput">
+    <button onclick="sendCredentials()">Login</button>
+    <button onclick="sendMessage()">Send Message</button>
+    <button onclick="uploadDocument()">Upload Document</button>
+    <script>
+        const socket = io('http://127.0.0.1:5000');  // Use localhost for local testing
+
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from server');
+        });
+
+        function sendCredentials() {
+            const usernameInput = document.getElementById('usernameInput');
+            const passwordInput = document.getElementById('passwordInput');
+            const credentials = {
+                username: usernameInput.value,
+                password: passwordInput.value
+            };
+            socket.emit('authenticate', credentials);
+            usernameInput.value = '';
+            passwordInput.value = '';
+        }
+
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value;
+            socket.emit('generate_slide2', {'slides': ["title", "introduction"]});
+            console.log("Sending...")
+            messageInput.value = '';
+        }
+
+        function uploadDocument() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const fileData = event.target.result;
+                    socket.emit('receive_documents', {
+                        filename: file.name,
+                        file: fileData
+                    });
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                console.log('No file selected');
+            }
+        }
+
+        socket.on('response', (response) => {
+            console.log('Server response:', response);
+        });
+
+        socket.on('document_upload_status', (status) => {
+            console.log('Document upload status:', status);
+        });
+    </script>
+</body>
+</html>

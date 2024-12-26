@@ -1,5 +1,5 @@
 import logging
-from flask import Flask, render_template, request, session
+from flask import Flask, render_template, request, session, jsonify
 from flask_socketio import SocketIO, disconnect
 from project_state import ProjectState
 from vector_store import VectorStore
@@ -10,7 +10,7 @@ from pprint import pprint
 from messages import SLIDE_TYPES_ENGLISH, SLIDE_TYPES_NORWEGIAN
 load_dotenv()
 import time
-
+from datetime import datetime
 def format_slide_content(slide_config, doc_content):
     message_content_english = f"""
                 Create a **{slide_config['name']}** slide for a pitch deck using the provided company documents and the following detailed instructions.
@@ -75,6 +75,32 @@ def list_assistants(model=None):
         return []
 
 
+class Tools:
+    def __init__(self):
+        pass
+
+    def create_state(self, user, client):
+        user['state'] = {
+                'project_id': user.get('project_id', "_"),
+                'current_phase': 0,
+                'current_language': user.get('language', None) or 'en',
+                'slides': {},
+                'html_preview': False,
+                'pdf_generated': False,
+                'timestamp': datetime.now().isoformat()
+            }
+        if not user.get('client'):
+            if not user.get('thread_id'):
+                user['thread_id'] = client.beta.threads.create().id
+        return True
+    
+    def add_slide(self, user, slide_name, content):
+        user['state']['slides'][slide_name] = content
+    
+    def update_slide(self,user, slide_name, new_value):
+        user['state']['slides'][slide_name] = new_value
+        return True
+
 class SocketApp:
     def __init__(self):
         self.app = Flask(__name__)
@@ -83,16 +109,8 @@ class SocketApp:
         self.register_events()
         self.name = "SocketApp"
         self.client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-        # self.asst = self.client.beta.assistants.create(model="gpt-4o-mini", 
-        #                                                name="Pitch Deck Assistant", 
-        #     instructions="""You are a pitch deck assistant that creates pitch decks for startups. 
-        #                     You are given a company document and you create a pitch deck for the company.""")
-        # print(self.asst)
-        self.assistant_id = "asst_8MAGpmKmGYPgNRMJgX8M6AoC"#"asst_JG70uto633EsWEMYQvBB0aNU"
-        # print(f'self.asst: {self.assistant_id}')
-        # pprint(list_assistants(self.client))
-
-
+        self.tools = Tools()
+        self.assistant_id = "asst_8MAGpmKmGYPgNRMJgX8M6AoC"
         self.thread_id = None
         logging.basicConfig(level=logging.INFO)
 
@@ -100,7 +118,22 @@ class SocketApp:
         # self.openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
         self.thread_id = None
 
+
     def register_events(self):
+        @self.socketio.on('delete')
+        def delete():
+            del session['user']
+            self.socketio.emit('delete', {'status': '200'})
+
+        @self.socketio.on('language')
+        def handle_language(language): # ['en, no]
+            print(language)
+            if not language in ['en', 'no']:
+                return
+            user = session['user']
+            user['language'] = language
+            self.socketio.emit('language', {'status': '200'})
+
         @self.socketio.on('connect')
         def handle_connect():
             logging.info("Connecting...")
@@ -109,26 +142,62 @@ class SocketApp:
             if not username:
                 logging.info("Client has no username")
                 self.socketio.emit('require_auth')
-                # return ## REMEMBER TO RE-ENABLE THIS
-            session['user'] = {}
-            user = session['user']
-            user['project_id'] = username or "Athem"
-            user['vector_store'] = VectorStore(api_key=os.getenv('PINECONE_API_KEY'))
-            user['project_state'] = ProjectState(project_id=user['project_id'], 
-                                                 vector_store=user['vector_store'], 
-                                                 user=user, client=self.client)
-            user['project_state'].load_state()
-            if user.get('last_saved_state'):
-                lsat_saved = user["last_saved_state"]
-                print(f'state: {lsat_saved}')
-            else:
-                print("No state data found")
-            user['current_language'] = 'en'
-            if not user.get('client'):
-                if not user.get('thread_id'):
-                    user['thread_id'] = self.client.beta.threads.create().id
+            if username not in session:
+                # session['user'] = {}
+                user = session['user']
+                user['project_id'] = 'Athem'
+                self.tools.create_state(user, self.client)
+                print(user['state'])
+                logging.info(f'{user}, app name: {self.name}')
 
-            logging.info(f'{user}, app name: {self.name}')
+            self.socketio.emit('slide_content', {'status': '200'})
+
+        @self.socketio.on('get_slide_options')
+        def get_slide_options():
+            {
+                'required': ['title', 'introduction'],
+                'optional': ['team', 'experience']
+            }
+        
+        @self.socketio.on('upload_document')
+        def handle_upload_document(data):
+            try:
+                file_data = data['file']
+                file_name = data['filename']
+                file_path = f'/path/to/save/{file_name}'  # Update the path as needed
+
+                with open(file_path, 'wb') as f:
+                    f.write(file_data)
+
+                logging.info(f"Document {file_name} uploaded successfully.")
+                self.socketio.emit('document_upload_status', {'status': 'success', 'filename': file_name})
+            except Exception as e:
+                logging.error(f"Error uploading document: {str(e)}")
+                self.socketio.emit('document_upload_status', {'status': 'error', 'message': str(e)})
+
+        @self.socketio.on('receive_documents')
+        def handle_documents(documents):
+            logging.info("Receiving documents...")
+            user = session.get('user', {})
+            
+            if not isinstance(documents, list):
+                documents = [documents]
+                
+            try:
+                if 'documents' not in user:
+                    user['documents'] = []
+                
+                user['documents'].extend(documents)
+                print(user['documents'])
+                logging.info(f"Stored {len(documents)} documents for user")
+                self.socketio.emit('documents_received', {'status': 'success'})
+                
+            except Exception as e:
+                logging.error(f"Error storing documents: {str(e)}")
+                self.socketio.emit('documents_received', {
+                    'status': 'error',
+                    'message': 'Failed to store documents'
+                })
 
         @self.socketio.on('generate_slide')
         def generate_slide(slide_type):
@@ -276,22 +345,22 @@ class SocketApp:
             self.socketio.emit('slide_options', slide_options)
 
         @self.socketio.on('generate_slide2')
-        def get_slide_types2(msg):
+        def get_slide_types2(slides):
+            print(slides)
             language = 'en'
-            selected_slides = ["title", "introduction"]#, "problem", "solution", "market", "ask"]
+            selected_slides = slides['slides']#, "problem", "solution", "market", "ask"]
             
             slide_config = SLIDE_TYPES_ENGLISH if language == "en" else SLIDE_TYPES_NORWEGIAN
             user = session.get('user', {})
             
-            with open('company-detailed-document.txt', 'r') as f:
-                doc_content = f.read()
+            if not user.get('documents'):
+                self.socketio.emmit('error', {'error': "No documents provided"})
+                return
+            print(user['documents'])
+            doc_content = ''.join([ str(document['file']) for document in  user['documents']])
 
             selected_slide_configs = {k: v for k, v in slide_config.items() if k in selected_slides}
-            
-            # if not user.get('thread_id'):
-            #     thread = self.client.beta.threads.create()
-            #     user['thread_id'] = thread.id
-
+            print('selected_slides', selected_slide_configs)
             for slide_type, config in selected_slide_configs.items():
                 message_content = format_slide_content(config, doc_content)
                 
@@ -321,35 +390,27 @@ class SocketApp:
                     response = messages.data[0].content[0].text.value
                     cleaned_response = response
                     
-                    if 'raw_responses' not in user:
-                        user['raw_responses'] = {}
-                    print(f'config: {config["name"]}')
-                    user['raw_responses'][config['name']] = cleaned_response
-                    print(f'slide_content: {cleaned_response}')
-                    user['vector_store'].store_slide(user['project_id'], config['name'], cleaned_response, language)
-                    print(f'set {config["name"]} to vector store')
-                    print(f'from slide: ', user['vector_store'].get_latest_slides(user['project_id'], language))
+                    self.tools.add_slide(user, config['name'],cleaned_response)
+                    # print(f'config: {config["name"]}')
+                    pprint(user['state'])
                     self.socketio.emit('slide_content', {
                         'content': cleaned_response,
-                        'slide_name': config['name']
+                        'slide_name': config['name'],
+                        'status': 'progress'
                     })
                     
                     success = True  # Replace with actual save logic
                     if not success:
                         self.socketio.emit('error', {'message': f"Failed to save {config['name']}"})
                         return
-                        
-                    self.socketio.emit('progress', {'progress': 1.0})
-                    self.socketio.emit('response', {'message': "✨ Slide generated successfully!"})
                 else:
                     self.socketio.emit('error', {'message': "Failed to generate slide content"})
                     return
+            self.socketio.emit('slide_content', {'status': 'done'})
+
     def run(self, host='0.0.0.0', port=5000):
         logging.info(f"Server is running on http://{host}:{port}")
         self.socketio.run(self.app, host=host, port=port)
-
-
-
 
 if __name__ == '__main__':
     logging.info("Initializing SocketApp")

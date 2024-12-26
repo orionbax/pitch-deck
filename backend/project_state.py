@@ -38,7 +38,7 @@ class ProjectState:
             state_json = json.dumps(state_data)
 
             # Store in vector store
-            success = self.vector_store.store_state(self.project_id, state_json)
+            success = self.vector_store.store_state(self.project_id, state_data)
 
             if not success:
                 print("Failed to store project state in vector store")
