@@ -1,20 +1,35 @@
+# First, ignore everything
+*
 *.*
 
-!backend/main.py
-!backend/app.py
-!backend/vector_store.py
-!backend/project_state.py
-!backend/message.py
-!backend/requirements.py
-!backend/profile
-!backend/test_html.html
-!backend/endpoints
+# Then, explicitly allow specific directories and files
 
-!frontend/public
-!frontend/src
+# Backend
+!backend/
+!backend/**/*.py
+!backend/profile/
+!backend/test_html.html
+!backend/endpoints/
+
+# Frontend
+!frontend/
+!frontend/public/
+!frontend/src/
 !frontend/package-lock.json
 !frontend/package.json
 !frontend/tailwind.config.json
 !frontend/README.md
+
+# Explicitly ignore certain directories and files
+backend/.env
+backend/Formulae/
+backend/Searching/
+backend/pitch-deck/
+backend/workflow/
+env/
+_backup/
+pitch-deck/
+backend/test.py
+backend/test_socket.py
 
 
