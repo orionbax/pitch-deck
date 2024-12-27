@@ -1,6 +1,6 @@
 
 
-# I opt to use using /create_project instead of /connect
+# I opt to using /create_project instead of /connect
 # since /connect is a reserved endpoint for socket.io
 /create_project -> 'project_id':
            /success {
