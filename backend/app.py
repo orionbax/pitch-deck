@@ -89,9 +89,11 @@ class Tools:
                 'pdf_generated': False,
                 'timestamp': datetime.now().isoformat()
             }
-        if not user.get('client'):
-            if not user.get('thread_id'):
-                user['thread_id'] = client.beta.threads.create().id
+        # if not user.get('client'):
+        #     if not user.get('thread_id'):
+        id = client.beta.threads.create().id
+        user['thread_id'] = client.beta.threads.create().id
+        print(id, user)
         return True
     
     def add_slide(self, user, slide_name, content):
@@ -135,22 +137,27 @@ class SocketApp:
             self.socketio.emit('language', {'status': '200'})
 
         @self.socketio.on('connect')
-        def handle_connect(project_id):
+        def handle_connect():
+            logging.info(f"connecting")
+
+        @self.socketio.on('create_project')
+        def handle_connect(project_id=None):
+            print(f'project_id: {project_id}')
             logging.info("Connecting...")
             logging.info(f'Client connected: {request.sid}')
-            project_id = session.get('project_id', None)
             if not project_id:
                 logging.info("Client has no project_id")
                 self.socketio.emit('require_auth')
             if project_id not in session:
-                # session['user'] = {}
+                session['user'] = {}
                 user = session['user']
+                user = {}
                 user['project_id'] = project_id
                 self.tools.create_state(user, self.client)
                 print(user['state'])
                 logging.info(f'{user}, app name: {self.name}')
                 
-            self.socketio.emit('slide_content', user['state']) # {'status': '200'})
+            self.socketio.emit('success', user['state']) # {'status': '200'})
 
         @self.socketio.on('get_slide_options')
         def get_slide_options():
@@ -178,8 +185,10 @@ class SocketApp:
         @self.socketio.on('receive_documents')
         def handle_documents(documents):
             logging.info("Receiving documents...")
+            print(session)
             user = session.get('user', {})
-            
+
+            print('user', user)
             if not isinstance(documents, list):
                 documents = [documents]
                 
@@ -188,7 +197,7 @@ class SocketApp:
                     user['documents'] = []
                 
                 user['documents'].extend(documents)
-                print(user['documents'])
+                # print(user['documents'])
                 logging.info(f"Stored {len(documents)} documents for user")
                 self.socketio.emit('documents_received', {'status': 'success'})
                 
@@ -346,17 +355,18 @@ class SocketApp:
 
         @self.socketio.on('generate_slide2')
         def get_slide_types2(slides):
-            print(slides)
+            # print(slides)
             language = 'en'
             selected_slides = slides['slides']#, "problem", "solution", "market", "ask"]
             
             slide_config = SLIDE_TYPES_ENGLISH if language == "en" else SLIDE_TYPES_NORWEGIAN
             user = session.get('user', {})
+            print('user', user)
             
             if not user.get('documents'):
-                self.socketio.emmit('error', {'error': "No documents provided"})
+                self.socketio.emit('error', {'error': "No documents provided"})
                 return
-            print(user['documents'])
+            # print(user['documents'])
             doc_content = ''.join([ str(document['file']) for document in  user['documents']])
 
             selected_slide_configs = {k: v for k, v in slide_config.items() if k in selected_slides}

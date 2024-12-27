@@ -1,6 +1,8 @@
 
 
-/connect -> 'project_id':
+# I opt to use using /create_project instead of /connect
+# since /connect is a reserved endpoint for socket.io
+/create_project -> 'project_id':
            /success {
                 'project_id': user.get('project_id', "_"),
                 'current_phase': 0,

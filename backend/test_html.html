@@ -26,6 +26,10 @@
             console.log('Disconnected from server');
         });
 
+        socket.on('success', (msg) => {
+            console.log('Success:', msg);
+        });
+
         function sendCredentials() {
             const usernameInput = document.getElementById('usernameInput');
             const passwordInput = document.getElementById('passwordInput');
@@ -33,7 +37,7 @@
                 username: usernameInput.value,
                 password: passwordInput.value
             };
-            socket.emit('authenticate', credentials);
+            socket.emit('create_project', usernameInput.value);
             usernameInput.value = '';
             passwordInput.value = '';
         }
