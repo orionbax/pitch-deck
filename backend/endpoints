@@ -1,120 +1,125 @@
-# Backend API Documentation
-
-This document provides an overview of the API endpoints available in the backend application. Each endpoint is described with its purpose, request format, and expected responses.
+# API Documentation for app.py
 
 ## Base URL
-
-The base URL for all API requests is: `http://<server-ip>:5000`
+The base URL for all API requests is: `http://127.0.0.1:5000`
 
 ## Endpoints
 
 ### 1. Create Project
-
-- **Endpoint**: `/create_project`
+- **URL**: `/create_project`
 - **Method**: `POST`
-- **Description**: Initializes a new project session with a unique project ID.
-
-#### Request
-
-- **Headers**: 
-  - `Content-Type: application/json`
-- **Body**:  ```json
+- **Description**: Initializes a new project session with a specified project ID.
+- **Request Body**:  ```json
   {
-    "project_id": "your_project_id"
+    "project_id": "string"
   }  ```
-
-#### Response
-
-- **Success**: Returns the project state.
-  - **Status Code**: `200 OK`
-  - **Body**:    ```json
+- **Response**:
+  - **Success**: Returns the initial state of the project.    ```json
     {
-      "project_id": "your_project_id",
+      "project_id": "string",
       "current_phase": 0,
       "current_language": "en",
       "slides": {},
       "html_preview": false,
       "pdf_generated": false,
-      "timestamp": "2024-12-27T20:30:24.542528"
+      "timestamp": "ISO 8601 string"
     }    ```
-- **Error**: If the project ID is missing.
-  - **Status Code**: `400 Bad Request`
-  - **Body**:    ```json
+  - **Error**: If `project_id` is not provided.    ```json
     {
       "error": "Project ID is required"
     }    ```
 
-### 2. Upload Documents
-
-- **Endpoint**: `/upload_documents`
+### 2. Delete Project
+- **URL**: `/delete_project`
 - **Method**: `POST`
-- **Description**: Uploads multiple documents (PDF, DOCX, TXT) to the current project session.
-
-#### Request
-
-- **Headers**: 
-  - `Content-Type: multipart/form-data`
-- **Body**: Form data with files.
-  - **Field Name**: `documents`
-  - **Files**: Multiple files can be uploaded.
-
-#### Response
-
-- **Success**: Returns the number of documents processed.
-  - **Status Code**: `200 OK`
-  - **Body**:    ```json
+- **Description**: Clears the current project session, effectively deleting the project.
+- **Response**:
+  - **Success**:    ```json
     {
       "status": "success",
-      "message": "3 documents processed"
+      "message": "Project deleted"
     }    ```
-- **Error**: If no active project session or no documents provided.
-  - **Status Code**: `400 Bad Request`
-  - **Body**:    ```json
+
+### 3. Upload Documents
+- **URL**: `/upload_documents`
+- **Method**: `POST`
+- **Description**: Uploads and processes documents (PDF, DOCX, TXT) for the current project.
+- **Request**: Form data with files under the key `documents`.
+- **Response**:
+  - **Success**: Returns the number of documents successfully processed.    ```json
     {
-      "error": "No active project session"
+      "status": "success",
+      "message": "X documents processed"
     }    ```
-    or    ```json
+  - **Error**: If no documents are provided or if processing fails.    ```json
     {
       "error": "No documents provided"
     }    ```
 
-### 3. Generate Slides
-
-- **Endpoint**: `/generate_slides`
+### 4. Set Language
+- **URL**: `/set_language`
 - **Method**: `POST`
-- **Description**: Initiates the slide generation process for the selected slides.
-
-#### Request
-
-- **Headers**: 
-  - `Content-Type: application/json`
-- **Body**:  ```json
+- **Description**: Sets the language for the current project session.
+- **Request Body**:  ```json
   {
-    "slides": ["title", "introduction", "problem"]
+    "language": "en" | "no"
+  }  ```
+- **Response**:
+  - **Success**: Confirms the language has been set.    ```json
+    {
+      "status": "success",
+      "message": "Language set to en"
+    }    ```
+  - **Error**: If an invalid language is provided.    ```json
+    {
+      "error": "Invalid language"
+    }    ```
+
+### 5. Generate Slides
+- **URL**: `/generate_slides`
+- **Method**: `POST`
+- **Description**: Generates content for a specified slide type using the uploaded documents.
+- **Request Body**:  ```json
+  {
+    "slide": "string"
+  }  ```
+- **Response**:
+  - **Success**: Returns the generated content for the slide.    ```json
+    {
+      "status": "completed",
+      "content": "string"
+    }    ```
+  - **Error**: If no documents are available or if slide generation fails.    ```json
+    {
+      "error": "No documents provided"
+    }    ```
+
+### 6. Edit Slide
+- **URL**: `/edit_slide`
+- **Method**: `POST`
+- **Description**: Edits the content of a specified slide based on user input.
+- **Request Body**:  ```json
+  {
+    "slide": "string",
+    "edit_request": "string"
+  }  ```
+- **Response**:
+  - **Success**: Returns the modified content of the slide.    ```json
+    {
+      "status": "completed",
+      "content": "string"
+    }    ```
+  - **Error**: If slide modification fails.    ```json
+    {
+      "error": "Failed to modify slide content"
+    }    ```
+
+### 7. Test CORS
+- **URL**: `/test_cors`
+- **Method**: `GET`
+- **Description**: A simple endpoint to test CORS configuration.
+- **Response**:  ```json
+  {
+    "message": "CORS is working!"
   }  ```
 
-#### Response
-
-- **Success**: Indicates that slide generation has started.
-  - **Status Code**: `200 OK`
-  - **Body**:    ```json
-    {
-      "status": "processing"
-    }    ```
-- **Error**: If no active project session or no documents provided.
-  - **Status Code**: `400 Bad Request`
-  - **Body**:    ```json
-    {
-      "error": "No active project session"
-    }    ```
-    or    ```json
-    {
-      "error": "No documents provided"
-    }    ```
-
-## Notes
-
-- **Session Management**: The backend uses Flask sessions to maintain state across requests. Ensure that cookies are enabled in the browser to allow session persistence.
-- **CORS**: Cross-Origin Resource Sharing (CORS) is enabled with credentials, allowing the frontend to make requests from different origins.
-
-This documentation should provide a clear understanding of how to interact with the backend API. If you have any questions or need further clarification, please reach out to the backend development team. 

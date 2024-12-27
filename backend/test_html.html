@@ -3,86 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebSocket Test</title>
-    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <title>Flask App Test Interface</title>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Handle project creation
+            document.getElementById('createProjectForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+                const projectId = document.getElementById('projectId').value;
+                fetch('http://127.0.0.1:5000/create_project', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ project_id: projectId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Project created:', data);
+                    if (data.error) {
+                        alert(data.error);
+                    } else {
+                        alert('Project created successfully!');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            });
+
+            // Handle document upload
+            document.getElementById('uploadDocumentForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+                const fileInput = document.getElementById('documentFile');
+                const files = fileInput.files;
+                const formData = new FormData();
+
+                for (let i = 0; i < files.length; i++) {
+                    formData.append('documents', files[i]);
+                }
+
+                fetch('http://127.0.0.1:5000/upload_documents', {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Document upload status:', data);
+                    if (data.error) {
+                        alert(data.error);
+                    } else {
+                        alert('Documents uploaded successfully!');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            });
+
+            // Handle language setting
+            document.getElementById('setLanguageForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+                const language = document.querySelector('input[name="language"]:checked').value;
+                fetch('http://127.0.0.1:5000/set_language', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ language: language })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Language set status:', data);
+                    if (data.error) {
+                        alert(data.error);
+                    } else {
+                        alert(`Language set to ${language}`);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            });
+
+            // Handle slide generation
+            document.getElementById('generateSlidesForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+                const slide = document.querySelector('input[name="slide"]:checked').value;
+                const slideContainer = document.getElementById('slideContainer');
+                slideContainer.innerHTML = '';  // Clear previous results
+
+                fetch('http://127.0.0.1:5000/generate_slides', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ slide: slide })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Slide generation status:', data);
+                    if (data.error) {
+                        alert(data.error);
+                    } else {
+                        const slideElement = document.createElement('div');
+                        slideElement.innerHTML = `<h3>${slide} Slide</h3><p>${data.content}</p>`;
+                        slideContainer.appendChild(slideElement);
+
+                        // Add edit form for the slide
+                        const editForm = document.createElement('form');
+                        editForm.innerHTML = `
+                            <h4>Edit ${slide} Slide</h4>
+                            <textarea id="editRequest" placeholder="Enter your edit request here" required></textarea>
+                            <button type="button" onclick="editSlide('${slide}')">Submit Edit</button>
+                        `;
+                        slideContainer.appendChild(editForm);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            });
+
+            // Handle project deletion
+            document.getElementById('deleteProjectButton').addEventListener('click', function() {
+                fetch('http://127.0.0.1:5000/delete_project', {
+                    method: 'POST',
+                    credentials: 'include'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Project deletion status:', data);
+                    if (data.error) {
+                        alert(data.error);
+                    } else {
+                        alert('Project deleted successfully!');
+                        // Optionally, clear the UI or reset forms
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            });
+        });
+
+        // Function to handle slide editing
+        function editSlide(slide) {
+            const editRequest = document.getElementById('editRequest').value.trim();
+            fetch('http://127.0.0.1:5000/edit_slide', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({ slide: slide, edit_request: editRequest })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Slide edit status:', data);
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    alert('Slide edited successfully!');
+                    const slideContainer = document.getElementById('slideContainer');
+                    slideContainer.innerHTML = `<h3>${slide} Slide</h3><p>${data.content.content}</p>`;
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
 </head>
 <body>
-    <h1>WebSocket Test</h1>
-    <input type="text" id="usernameInput" placeholder="Enter username">
-    <input type="password" id="passwordInput" placeholder="Enter password">
-    <input type="text" id="messageInput" placeholder="Enter message">
-    <input type="file" id="fileInput">
-    <button onclick="sendCredentials()">Login</button>
-    <button onclick="sendMessage()">Send Message</button>
-    <button onclick="uploadDocument()">Upload Document</button>
-    <script>
-        const socket = io('http://127.0.0.1:5000');  // Use localhost for local testing
+    <h1>Flask App Test Interface</h1>
 
-        socket.on('connect', () => {
-            console.log('Connected to server');
-        });
+    <form id="createProjectForm">
+        <h2>Create Project</h2>
+        <input type="text" id="projectId" placeholder="Enter Project ID" required>
+        <button type="submit">Create Project</button>
+    </form>
 
-        socket.on('disconnect', () => {
-            console.log('Disconnected from server');
-        });
+    <form id="uploadDocumentForm">
+        <h2>Upload Documents</h2>
+        <input type="file" id="documentFile" multiple accept=".pdf,.docx,.txt" required>
+        <button type="submit">Upload Documents</button>
+    </form>
 
-        socket.on('success', (msg) => {
-            console.log('Success:', msg);
-        });
+    <form id="setLanguageForm">
+        <h2>Select Language</h2>
+        <label><input type="radio" name="language" value="en" required> English</label>
+        <label><input type="radio" name="language" value="no"> Norwegian</label>
+        <button type="submit">Set Language</button>
+    </form>
 
-        socket.on('slide_content', (msg) => {
-            console.log('Slide content:', msg);
-        });
+    <form id="generateSlidesForm">
+        <h2>Select Slide to Generate</h2>
+        <label><input type="radio" name="slide" value="title" required> Title</label>
+        <label><input type="radio" name="slide" value="introduction"> Introduction</label>
+        <label><input type="radio" name="slide" value="problem"> Problem</label>
+        <label><input type="radio" name="slide" value="solution"> Solution</label>
+        <label><input type="radio" name="slide" value="market"> Market</label>
+        <button type="submit">Generate Slide</button>
+    </form>
 
-        socket.on('error', (msg) => {
-            console.log('Error:', msg);
-        });
+    <button id="deleteProjectButton">Delete Project</button>
 
-        function sendCredentials() {
-            const usernameInput = document.getElementById('usernameInput');
-            const passwordInput = document.getElementById('passwordInput');
-            const credentials = {
-                username: usernameInput.value,
-                password: passwordInput.value
-            };
-            socket.emit('create_project', usernameInput.value);
-            usernameInput.value = '';
-            passwordInput.value = '';
-        }
-
-        function sendMessage() {
-            const messageInput = document.getElementById('messageInput');
-            const message = messageInput.value;
-            socket.emit('generate_slide2', {'slides': ["title", "introduction"]});
-            console.log("Sending...")
-            messageInput.value = '';
-        }
-
-        function uploadDocument() {
-            const fileInput = document.getElementById('fileInput');
-            const file = fileInput.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const fileData = event.target.result;
-                    socket.emit('receive_documents', {
-                        filename: file.name,
-                        file: fileData
-                    });
-                };
-                reader.readAsArrayBuffer(file);
-            } else {
-                console.log('No file selected');
-            }
-        }
-
-        socket.on('response', (response) => {
-            console.log('Server response:', response);
-        });
-
-        socket.on('document_upload_status', (status) => {
-            console.log('Document upload status:', status);
-        });
-    </script>
+    <div id="slideContainer">
+        <h2>Generated Slides</h2>
+    </div>
 </body>
 </html>
