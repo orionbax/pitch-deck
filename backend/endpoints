@@ -1,0 +1,41 @@
+
+
+/connect -> 'project_id':
+           /success {
+                'project_id': user.get('project_id', "_"),
+                'current_phase': 0,
+                'current_language': user.get('language', None) or 'en',
+                'slides': {},
+                'html_preview': False,
+                'pdf_generated': False,
+                'timestamp': datetime.now().isoformat()
+            }
+            if slides:
+
+                upload_option = False
+                delete_option = Button() 
+            else:
+                upload_option = True
+                display_slides
+
+/switch_language -> en or no
+    return /switch_language {status: 200}
+
+/delete_project -> 
+    return /delete_project {status: 200}
+
+/upload_documents ->
+    return /document_uploaded {status: 200}
+
+/generate_slides ->TAKES [slide_1, slide_2, ...]{
+    return /display_slide {'slide_name': str, 'content': str}
+}
+
+
+
+/download_pdf -> 
+    return {'filename': 'filename.pdf', 'content': b'content'}
+
+/download_html -> 
+    return {'filename': 'filename.html', 'content': b'content'}
+

@@ -135,22 +135,22 @@ class SocketApp:
             self.socketio.emit('language', {'status': '200'})
 
         @self.socketio.on('connect')
-        def handle_connect():
+        def handle_connect(project_id):
             logging.info("Connecting...")
             logging.info(f'Client connected: {request.sid}')
-            username = session.get('username', None)
-            if not username:
-                logging.info("Client has no username")
+            project_id = session.get('project_id', None)
+            if not project_id:
+                logging.info("Client has no project_id")
                 self.socketio.emit('require_auth')
-            if username not in session:
+            if project_id not in session:
                 # session['user'] = {}
                 user = session['user']
-                user['project_id'] = 'Athem'
+                user['project_id'] = project_id
                 self.tools.create_state(user, self.client)
                 print(user['state'])
                 logging.info(f'{user}, app name: {self.name}')
-
-            self.socketio.emit('slide_content', {'status': '200'})
+                
+            self.socketio.emit('slide_content', user['state']) # {'status': '200'})
 
         @self.socketio.on('get_slide_options')
         def get_slide_options():
