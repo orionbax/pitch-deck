@@ -1,5 +1,5 @@
 *.*
-!backend
+
 !backend/main.py
 !backend/app.py
 !backend/vector_store.py
@@ -9,7 +9,7 @@
 !backend/profile
 !backend/test_html.html
 !backend/endpoints
-!frontend/
+
 !frontend/public
 !frontend/src
 !frontend/package-lock.json
