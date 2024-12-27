@@ -11,6 +11,57 @@ from messages import SLIDE_TYPES_ENGLISH, SLIDE_TYPES_NORWEGIAN
 load_dotenv()
 import time
 from datetime import datetime
+
+optional_slides_english = {
+    "team": "Meet the Team",
+    "experience": "Our Experience with the Problem",
+    "revenue": "Revenue Model",
+    "go_to_market": "Go-To-Market Strategy",
+    "demo": "Demo",
+    "technology": "Technology",
+    "pipeline": "Product Development Pipeline",
+    "expansion": "Product Expansion",
+    "uniqueness": "Uniqueness & Protectability",
+    "competition": "Competitive Landscape",
+    "traction": "Traction & Milestones",
+    "financials": "Financial Overview",
+    "use_of_funds": "Use of Funds"
+}
+
+optional_slides_norwegian = {
+    "team": "Møt Teamet",
+    "experience": "Vår Erfaring med Problemet",
+    "revenue": "Inntektsmodell",
+    "go_to_market": "Gå-til-marked Strategi",
+    "demo": "Demo",
+    "technology": "Teknologi",
+    "pipeline": "Produktutviklingsplan",
+    "expansion": "Produktutvidelse",
+    "uniqueness": "Unikhet og Beskyttelse",
+    "competition": "Konkurranselandskap",
+    "traction": "Fremdrift og Milepæler",
+    "financials": "Finansiell Oversikt",
+    "use_of_funds": "Bruk av Midler"
+}
+required_slides_english = {
+            "title": "Title Slide",
+            "introduction": "Introduction",
+            "problem": "Problem Statement",
+            "solution": "Solution",
+            "market": "Market Opportunity",
+            "ask": "Ask",
+            }
+
+required_slides_norwegian = {
+    "title": "Tittelslide",
+    "introduction": "Introduksjon",
+    "problem": "Problemstilling",
+    "solution": "Løsning",
+    "market": "Markedmuligheter",
+    "ask": "Forespørsel",
+}
+
+
 def format_slide_content(slide_config, doc_content):
     message_content_english = f"""
                 Create a **{slide_config['name']}** slide for a pitch deck using the provided company documents and the following detailed instructions.
@@ -151,7 +202,6 @@ class SocketApp:
             if project_id not in session:
                 session['user'] = {}
                 user = session['user']
-                user = {}
                 user['project_id'] = project_id
                 self.tools.create_state(user, self.client)
                 print(user['state'])
@@ -161,6 +211,8 @@ class SocketApp:
 
         @self.socketio.on('get_slide_options')
         def get_slide_options():
+            
+            
             {
                 'required': ['title', 'introduction'],
                 'optional': ['team', 'experience']
@@ -208,68 +260,6 @@ class SocketApp:
                     'message': 'Failed to store documents'
                 })
 
-        @self.socketio.on('generate_slide')
-        def generate_slide(slide_type):
-            user = session.get('user', {})
-            doc_content = user.get('doc_content', '')
-            with open('company-detailed-document.txt', 'r') as f:
-                doc_content = f.read()
-            
-            if not doc_content:
-                logging.error("Document content is missing.")
-                return
-            
-            slide_type = {
-                'name': 'Overview',
-                'required_elements': [
-                    'Company Name',
-                    'Industry',
-                    'Mission Statement',
-                    'Overview'
-                ],
-                'prompt': 'Create a concise overview slide text that includes the company name, industry, mission statement and a brief overview. Format it in a clear, presentation-friendly way.'
-            }
-            
-            logging.info(f"Generating slide for type: {slide_type} with doc_content: {doc_content}")
-
-            # Ensure format_slide_content returns a valid string
-            slide_content = format_slide_content(slide_type, doc_content)
-            if not slide_content:
-                logging.error("Formatted slide content is empty or invalid.")
-                return
-
-            if not user.get('thread_id'):
-                user['thread_id'] = self.client.beta.threads.create().id
-            thread_id = user['thread_id']
-
-          
-            run = self.client.beta.threads.runs.create(
-                thread_id=thread_id,
-                assistant_id=self.assistant_id,
-                # assistant_id='asst_uCXB3ZuddxaZZeEqPh8LZ5Zf',
-                additional_instructions=doc_content
-            )
-            print('finished..')
-            print(run.status)
-
-            while run.status in ["queued", "in_progress"]:
-                run = self.client.beta.threads.runs.retrieve(
-                    thread_id=thread_id,
-                    run_id=run.id
-                )
-                print(run.status)
-
-            if run.status == "completed":
-                messages = self.client.beta.threads.messages.list(
-                    thread_id=thread_id,
-                )
-                # pprint(messages)
-                pprint(messages.data)
-                response = messages.data[0].content[0].text.value
-                print(f"response: {response}")
-                # print(len(response))
-                # self.socketio.emit('slide_generated', f"Slide {slide_type['name']} generated")
-
         @self.socketio.on('message')
         def handle_message(msg):
             username = session.get('username', None)
@@ -285,8 +275,9 @@ class SocketApp:
         def handle_disconnect():
             user_id = request.sid
             authenticated = session.get('authenticated', False)
-            username = session.get('username', 'Anonymous')
-            logging.info(f'Client disconnected: {username} ({user_id}) (Authenticated: {authenticated})')
+            project_id = session.get('project_id', 'Anonymous')
+            print("\n\nUser has disconnected\n\n")
+            logging.info(f'Client disconnected: {project_id} ({user_id}) (Authenticated: {authenticated})')
 
         @self.socketio.on('get_slide_options')
         def get_slide_options():
@@ -357,20 +348,25 @@ class SocketApp:
         def get_slide_types2(slides):
             # print(slides)
             language = 'en'
-            selected_slides = slides['slides']#, "problem", "solution", "market", "ask"]
+            # selected_slides = slides['slides']#, "problem", "solution", "market", "ask"]
             
             slide_config = SLIDE_TYPES_ENGLISH if language == "en" else SLIDE_TYPES_NORWEGIAN
+            selected_slides = {k: v for k, v in slide_config.items() if k in slides}
+
             user = session.get('user', {})
-            print('user', user)
+            # print('user', user)
             
             if not user.get('documents'):
                 self.socketio.emit('error', {'error': "No documents provided"})
                 return
             # print(user['documents'])
             doc_content = ''.join([ str(document['file']) for document in  user['documents']])
+            required_slides = {k: v for k, v in slide_config.items() if k in required_slides_english } \
+                if language == "en" else {k: v for k, v in required_slides_norwegian.items()}
+            selected_slide_configs = {**required_slides, **{ k: v for k, v in slide_config.items() if k in selected_slides}}
+            # pprint( required_slides)
+            # pprint( selected_slide_configs)
 
-            selected_slide_configs = {k: v for k, v in slide_config.items() if k in selected_slides}
-            print('selected_slides', selected_slide_configs)
             for slide_type, config in selected_slide_configs.items():
                 message_content = format_slide_content(config, doc_content)
                 
@@ -402,12 +398,16 @@ class SocketApp:
                     
                     self.tools.add_slide(user, config['name'],cleaned_response)
                     # print(f'config: {config["name"]}')
-                    pprint(user['state'])
-                    self.socketio.emit('slide_content', {
+                    slide_content = {
                         'content': cleaned_response,
                         'slide_name': config['name'],
                         'status': 'progress'
-                    })
+                    }
+
+                    self.socketio.send('slide_content', slide_content)
+
+                    # pprint(cleaned_response)
+
                     
                     success = True  # Replace with actual save logic
                     if not success:

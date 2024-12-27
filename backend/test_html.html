@@ -30,6 +30,14 @@
             console.log('Success:', msg);
         });
 
+        socket.on('slide_content', (msg) => {
+            console.log('Slide content:', msg);
+        });
+
+        socket.on('error', (msg) => {
+            console.log('Error:', msg);
+        });
+
         function sendCredentials() {
             const usernameInput = document.getElementById('usernameInput');
             const passwordInput = document.getElementById('passwordInput');
