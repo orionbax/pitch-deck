@@ -1806,7 +1806,7 @@ def handle_slides_tab():
                 ### Documented Content:
                 {doc_content}
 
-                ### Required Elements:
+Required                ###  Elements:
                 * {', '.join(slide_config['required_elements'])}
 
                 ### Tone and Style:

@@ -1,43 +1,120 @@
+# Backend API Documentation
 
+This document provides an overview of the API endpoints available in the backend application. Each endpoint is described with its purpose, request format, and expected responses.
 
-# I opt to using /create_project instead of /connect
-# since /connect is a reserved endpoint for socket.io
-/create_project -> 'project_id':
-           /success {
-                'project_id': user.get('project_id', "_"),
-                'current_phase': 0,
-                'current_language': user.get('language', None) or 'en',
-                'slides': {},
-                'html_preview': False,
-                'pdf_generated': False,
-                'timestamp': datetime.now().isoformat()
-            }
-            if slides:
+## Base URL
 
-                upload_option = False
-                delete_option = Button() 
-            else:
-                upload_option = True
-                display_slides
+The base URL for all API requests is: `http://<server-ip>:5000`
 
-/switch_language -> en or no
-    return /switch_language {status: 200}
+## Endpoints
 
-/delete_project -> 
-    return /delete_project {status: 200}
+### 1. Create Project
 
-/upload_documents ->
-    return /document_uploaded {status: 200}
+- **Endpoint**: `/create_project`
+- **Method**: `POST`
+- **Description**: Initializes a new project session with a unique project ID.
 
-/generate_slides ->TAKES [slide_1, slide_2, ...]{
-    return /display_slide {'slide_name': str, 'content': str}
-}
+#### Request
 
+- **Headers**: 
+  - `Content-Type: application/json`
+- **Body**:  ```json
+  {
+    "project_id": "your_project_id"
+  }  ```
 
+#### Response
 
-/download_pdf -> 
-    return {'filename': 'filename.pdf', 'content': b'content'}
+- **Success**: Returns the project state.
+  - **Status Code**: `200 OK`
+  - **Body**:    ```json
+    {
+      "project_id": "your_project_id",
+      "current_phase": 0,
+      "current_language": "en",
+      "slides": {},
+      "html_preview": false,
+      "pdf_generated": false,
+      "timestamp": "2024-12-27T20:30:24.542528"
+    }    ```
+- **Error**: If the project ID is missing.
+  - **Status Code**: `400 Bad Request`
+  - **Body**:    ```json
+    {
+      "error": "Project ID is required"
+    }    ```
 
-/download_html -> 
-    return {'filename': 'filename.html', 'content': b'content'}
+### 2. Upload Documents
 
+- **Endpoint**: `/upload_documents`
+- **Method**: `POST`
+- **Description**: Uploads multiple documents (PDF, DOCX, TXT) to the current project session.
+
+#### Request
+
+- **Headers**: 
+  - `Content-Type: multipart/form-data`
+- **Body**: Form data with files.
+  - **Field Name**: `documents`
+  - **Files**: Multiple files can be uploaded.
+
+#### Response
+
+- **Success**: Returns the number of documents processed.
+  - **Status Code**: `200 OK`
+  - **Body**:    ```json
+    {
+      "status": "success",
+      "message": "3 documents processed"
+    }    ```
+- **Error**: If no active project session or no documents provided.
+  - **Status Code**: `400 Bad Request`
+  - **Body**:    ```json
+    {
+      "error": "No active project session"
+    }    ```
+    or    ```json
+    {
+      "error": "No documents provided"
+    }    ```
+
+### 3. Generate Slides
+
+- **Endpoint**: `/generate_slides`
+- **Method**: `POST`
+- **Description**: Initiates the slide generation process for the selected slides.
+
+#### Request
+
+- **Headers**: 
+  - `Content-Type: application/json`
+- **Body**:  ```json
+  {
+    "slides": ["title", "introduction", "problem"]
+  }  ```
+
+#### Response
+
+- **Success**: Indicates that slide generation has started.
+  - **Status Code**: `200 OK`
+  - **Body**:    ```json
+    {
+      "status": "processing"
+    }    ```
+- **Error**: If no active project session or no documents provided.
+  - **Status Code**: `400 Bad Request`
+  - **Body**:    ```json
+    {
+      "error": "No active project session"
+    }    ```
+    or    ```json
+    {
+      "error": "No documents provided"
+    }    ```
+
+## Notes
+
+- **Session Management**: The backend uses Flask sessions to maintain state across requests. Ensure that cookies are enabled in the browser to allow session persistence.
+- **CORS**: Cross-Origin Resource Sharing (CORS) is enabled with credentials, allowing the frontend to make requests from different origins.
+
+This documentation should provide a clear understanding of how to interact with the backend API. If you have any questions or need further clarification, please reach out to the backend development team. 
