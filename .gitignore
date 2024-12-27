@@ -1,4 +1,5 @@
 *.*
+!backend
 !backend/main.py
 !backend/app.py
 !backend/vector_store.py
