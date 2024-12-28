@@ -5,29 +5,65 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flask App Test Interface</title>
     <script>
+        let projectToken = null;
+
+        // Utility function to get headers with token
+        function getHeaders(includeContentType = true) {
+            const headers = {};
+            if (projectToken) {
+                headers['Authorization'] = `Bearer ${projectToken}`;
+            }
+            if (includeContentType) {
+                headers['Content-Type'] = 'application/json';
+            }
+            return headers;
+        }
+
         document.addEventListener("DOMContentLoaded", function() {
             // Handle project creation
             document.getElementById('createProjectForm').addEventListener('submit', function(event) {
                 event.preventDefault();
                 const projectId = document.getElementById('projectId').value;
+                
+                // Clear any existing project data before creating/loading a project
+                if (projectToken) {
+                    localStorage.clear();
+                    projectToken = null;
+                }
+
                 fetch('http://127.0.0.1:5000/create_project', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'include',
+                    headers: getHeaders(),
                     body: JSON.stringify({ project_id: projectId })
                 })
                 .then(response => response.json())
                 .then(data => {
-                    console.log('Project created:', data);
+                    console.log('Project response:', data);
                     if (data.error) {
                         alert(data.error);
                     } else {
-                        alert('Project created successfully!');
+                        projectToken = data.token;
+                        localStorage.setItem('projectToken', projectToken);
+                        
+                        // Store project state
+                        if (data.state) {
+                            localStorage.setItem('projectState', JSON.stringify(data.state));
+                            updateUIFromState(data.state);
+                        }
+                        
+                        alert(data.message);
+                        
+                        // Enable other forms
+                        document.querySelectorAll('form:not(#createProjectForm)').forEach(form => {
+                            form.classList.remove('disabled');
+                        });
+                        document.getElementById('deleteProjectButton').classList.remove('disabled');
                     }
                 })
-                .catch(error => console.error('Error:', error));
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error creating/loading project. Please try again.');
+                });
             });
 
             // Handle document upload
@@ -43,7 +79,7 @@
 
                 fetch('http://127.0.0.1:5000/upload_documents', {
                     method: 'POST',
-                    credentials: 'include',
+                    headers: getHeaders(false), // Don't include Content-Type for FormData
                     body: formData
                 })
                 .then(response => response.json())
@@ -64,10 +100,7 @@
                 const language = document.querySelector('input[name="language"]:checked').value;
                 fetch('http://127.0.0.1:5000/set_language', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'include',
+                    headers: getHeaders(),
                     body: JSON.stringify({ language: language })
                 })
                 .then(response => response.json())
@@ -76,6 +109,15 @@
                     if (data.error) {
                         alert(data.error);
                     } else {
+                        // Store the updated state
+                        if (data.state) {
+                            // Update any UI elements that depend on language
+                            document.querySelectorAll('[data-language]').forEach(element => {
+                                element.textContent = data.state.current_language === 'no' ? 
+                                    element.dataset.norwegian : 
+                                    element.dataset.english;
+                            });
+                        }
                         alert(`Language set to ${language}`);
                     }
                 })
@@ -91,10 +133,7 @@
 
                 fetch('http://127.0.0.1:5000/generate_slides', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'include',
+                    headers: getHeaders(),
                     body: JSON.stringify({ slide: slide })
                 })
                 .then(response => response.json())
@@ -122,22 +161,96 @@
 
             // Handle project deletion
             document.getElementById('deleteProjectButton').addEventListener('click', function() {
+                if (!confirm('Are you sure you want to delete this project?')) {
+                    return;
+                }
+
+                const currentProjectId = document.getElementById('projectId').value;
+                console.log('Attempting to delete project:', currentProjectId);
+
                 fetch('http://127.0.0.1:5000/delete_project', {
                     method: 'POST',
-                    credentials: 'include'
+                    headers: getHeaders()
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Project deletion response:', data);
+                    
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    
+                    // Clear all project data
+                    projectToken = null;
+                    localStorage.clear();  // Clear all localStorage data
+                    
+                    // Reset UI
+                    document.getElementById('projectId').value = '';
+                    document.querySelectorAll('form:not(#createProjectForm)').forEach(form => {
+                        form.classList.add('disabled');
+                        form.reset();  // Reset all form inputs
+                    });
+                    document.getElementById('deleteProjectButton').classList.add('disabled');
+                    document.getElementById('slideContainer').innerHTML = '<h2>Generated Slides</h2>';
+                    
+                    alert('Project deleted successfully!');
+                    
+                    // Verify deletion by attempting to create the same project
+                    return fetch('http://127.0.0.1:5000/create_project', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ project_id: currentProjectId })
+                    });
                 })
                 .then(response => response.json())
                 .then(data => {
-                    console.log('Project deletion status:', data);
-                    if (data.error) {
-                        alert(data.error);
-                    } else {
-                        alert('Project deleted successfully!');
-                        // Optionally, clear the UI or reset forms
+                    if (data.message === 'Using existing project') {
+                        throw new Error('Project still exists after deletion!');
                     }
+                    // Reload the page to ensure a fresh state
+                    window.location.reload();
                 })
-                .catch(error => console.error('Error:', error));
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert(`Error: ${error.message}`);
+                    // Reload the page if there was an error to ensure clean state
+                    window.location.reload();
+                });
             });
+
+            // Check for existing token and state on page load
+            const savedToken = localStorage.getItem('projectToken');
+            const savedState = localStorage.getItem('projectState');
+            
+            if (savedToken) {
+                projectToken = savedToken;
+                document.querySelectorAll('form:not(#createProjectForm)').forEach(form => {
+                    form.classList.remove('disabled');
+                });
+                document.getElementById('deleteProjectButton').classList.remove('disabled');
+                
+                // Restore state if available
+                if (savedState) {
+                    try {
+                        const state = JSON.parse(savedState);
+                        updateUIFromState(state);
+                    } catch (e) {
+                        console.error('Error parsing saved state:', e);
+                    }
+                }
+            } else {
+                document.querySelectorAll('form:not(#createProjectForm)').forEach(form => {
+                    form.classList.add('disabled');
+                });
+                document.getElementById('deleteProjectButton').classList.add('disabled');
+            }
         });
 
         // Function to handle slide editing
@@ -145,10 +258,7 @@
             const editRequest = document.getElementById('editRequest').value.trim();
             fetch('http://127.0.0.1:5000/edit_slide', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include',
+                headers: getHeaders(),
                 body: JSON.stringify({ slide: slide, edit_request: editRequest })
             })
             .then(response => response.json())
@@ -164,7 +274,60 @@
             })
             .catch(error => console.error('Error:', error));
         }
+
+        // Add function to update UI based on project state
+        function updateUIFromState(state) {
+            // Update language selection
+            if (state.current_language) {
+                const languageInput = document.querySelector(`input[name="language"][value="${state.current_language}"]`);
+                if (languageInput) {
+                    languageInput.checked = true;
+                }
+            }
+
+            // Update slides if they exist
+            if (state.slides) {
+                const slideContainer = document.getElementById('slideContainer');
+                slideContainer.innerHTML = '<h2>Generated Slides</h2>';
+                
+                Object.entries(state.slides).forEach(([slideType, content]) => {
+                    const slideElement = document.createElement('div');
+                    slideElement.innerHTML = `
+                        <h3>${slideType} Slide</h3>
+                        <p>${content}</p>
+                        <form>
+                            <h4>Edit ${slideType} Slide</h4>
+                            <textarea id="editRequest_${slideType}" placeholder="Enter your edit request here" required></textarea>
+                            <button type="button" onclick="editSlide('${slideType}')">Submit Edit</button>
+                        </form>
+                    `;
+                    slideContainer.appendChild(slideElement);
+                });
+            }
+        }
     </script>
+    <style>
+        .disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        form {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+        }
+        button {
+            margin: 10px 0;
+            padding: 5px 10px;
+        }
+        #slideContainer {
+            margin-top: 20px;
+        }
+        textarea {
+            width: 100%;
+            min-height: 100px;
+        }
+    </style>
 </head>
 <body>
     <h1>Flask App Test Interface</h1>
