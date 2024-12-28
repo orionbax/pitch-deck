@@ -15,6 +15,9 @@
 !frontend/
 !frontend/public/
 !frontend/src/
+!frontend/src/components
+!frontend/src/components/statusSideBar.js
+!frontend/src/pages
 !frontend/src/pages/landingPage.js
 !frontend/src/pages/selectSlide.js
 !frontend/src/components/slideSelection.js
