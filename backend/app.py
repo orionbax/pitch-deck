@@ -11,6 +11,8 @@ import io
 import PyPDF2
 from docx import Document
 import time
+from database import DatabaseManager
+from s3_manager import S3Manager
 
 
 load_dotenv()
@@ -54,51 +56,53 @@ required_slides_english = {
     "ask": "Ask",
 }
 
+# Add DatabaseManager initialization
+db_manager = DatabaseManager()
+s3_manager = S3Manager()
+
 def log_session_info(endpoint_name):
     logging.info(f"Session data at {endpoint_name}: {session}")
 
 @app.route('/delete_project', methods=['POST'])
 def delete_project():
+    project_id = request.json.get('project_id')
+    if not project_id:
+        return jsonify({'error': 'Project ID is required'}), 400
+    
+    db_manager.delete_project(project_id)
     session.clear()
-    session.modified = True  # Ensure session is marked as modified
+    session.modified = True
     return jsonify({'status': 'success', 'message': 'Project deleted'})
 
 @app.route('/create_project', methods=['POST'])
 def create_project():
-    log_session_info('create_project')
     project_id = request.json.get('project_id')
     if not project_id:
         return jsonify({'error': 'Project ID is required'}), 400
 
-    # Initialize session if not already done
-    if 'user' not in session or session['user'].get('project_id') != project_id:
-        session['user'] = {}
-        user = session['user']
-        user['project_id'] = project_id
-        user['documents'] = []  # Initialize documents as a list
-        user['state'] = {
-            'project_id': project_id,
-            'current_phase': 0,
-            'current_language': 'en',
-            'slides': {},
-            'html_preview': False,
-            'pdf_generated': False,
-            'timestamp': datetime.now().isoformat(),
-        }
-        user['thread_id'] = OpenAI(api_key=os.getenv('OPENAI_API_KEY')).beta.threads.create().id
-        logging.info(f"Project created: {user}")
-    else: 
-        logging.info('USER IS ALREADY CREATED')
-    session.modified = True  # Ensure session is marked as modified
-    logging.info(f"Session data after creation: {session['user']}")
-    return jsonify(session['user']['state'])
+    # Create new thread
+    thread_id = OpenAI(api_key=os.getenv('OPENAI_API_KEY')).beta.threads.create().id
+    
+    # Create project in database
+    project = db_manager.create_project(project_id, thread_id)
+    
+    # Update session
+    session['user'] = {
+        'project_id': project_id,
+        'thread_id': thread_id,
+        'state': project['state']
+    }
+    session.modified = True
+    
+    return jsonify(project['state'])
 
 @app.route('/upload_documents', methods=['POST'])
 def upload_documents():
-    log_session_info('upload_documents')
     if 'user' not in session:
         return jsonify({'error': 'No active project session'}), 400
 
+    project_id = session['user']['project_id']
+    
     if 'documents' not in request.files:
         return jsonify({'error': 'No documents provided'}), 400
 
@@ -114,64 +118,71 @@ def upload_documents():
                 # Read PDF content
                 pdf_reader = PyPDF2.PdfReader(file)
                 content = ' '.join(page.extract_text() for page in pdf_reader.pages)
-
             elif file_ext == 'docx':
                 # Read DOCX content
                 doc = Document(file)
                 content = ' '.join(paragraph.text for paragraph in doc.paragraphs)
-            
             elif file_ext == 'txt':
                 # Read TXT content
                 content = file.read().decode('utf-8')
-            
             else:
                 continue
 
-            processed_documents.append({
+            # Upload to S3
+            s3_key = s3_manager.upload_document(project_id, filename, content)
+            
+            # Store metadata in MongoDB
+            document_metadata = {
                 'filename': filename,
-                'content': content
-            })
+                'file_type': file_ext,
+                's3_key': s3_key,
+                'uploaded_at': datetime.now().isoformat()
+            }
+            
+            db_manager.add_document(project_id, document_metadata)
+            processed_documents.append(document_metadata)
+
         except Exception as e:
             logging.error(f"Error processing file {filename}: {str(e)}")
             continue
 
     if processed_documents:
-        # Update the documents in the session
-        session['user']['documents'].extend(processed_documents)
-        session.modified = True  # Ensure session is marked as modified
-        logging.info(f"Updated user documents: {session['user']['documents']}")
         return jsonify({'status': 'success', 'message': f'{len(processed_documents)} documents processed'})
     else:
         return jsonify({'error': 'No valid documents were processed'}), 400
 
 @app.route('/set_language', methods=['POST'])
 def set_language():
-    log_session_info('set_language')
     if 'user' not in session:
         return jsonify({'error': 'No active project session'}), 400
         
+    project_id = session['user']['project_id']
     language = request.json.get('language')
+    
     if language in ['en', 'no']:
-        logging.info(f"Setting language: {language}")
+        # Update language in database
+        db_manager.update_project_language(project_id, language)
         session['user']['state']['current_language'] = language
-        session.modified = True  # Ensure session is marked as modified
-        logging.info(f"User state after setting language: {session['user']}")
-
+        session.modified = True
         return jsonify({'status': 'success', 'message': f'Language set to {language}'})
     else:
         return jsonify({'error': 'Invalid language'}), 400
 
 @app.route('/generate_slides', methods=['POST'])
 def generate_slides():
-    log_session_info('generate_slides')
     if 'user' not in session:
         return jsonify({'error': 'No active project session'}), 400
 
-    slide = request.json.get('slide')  # Expect a single slide
-    user = session['user']
-    logging.info(f"User in generate_slides: {user}")
-    documents = user.get('documents', [])
-    thread_id = user.get('thread_id')
+    project_id = session['user']['project_id']
+    slide = request.json.get('slide')
+    
+    # Get project from database
+    project = db_manager.get_project(project_id)
+    if not project:
+        return jsonify({'error': 'Project not found'}), 404
+
+    documents = project.get('documents', [])
+    thread_id = project.get('thread_id')
 
     if not documents:
         return jsonify({'error': "No documents provided"}), 400
@@ -179,20 +190,25 @@ def generate_slides():
     if not slide:
         return jsonify({'error': "No slide specified"}), 400
 
-    # Process the slide synchronously for demonstration purposes
     slide_content = process_slide(documents, thread_id, slide, assistant_id)
     if slide_content:
-        # Store the slide content in the session as {slide_type: content}
-        if 'slides' not in session['user']['state']:
-            session['user']['state']['slides'] = {}
+        # Store slide content in database
+        db_manager.update_slide_content(project_id, slide, slide_content)
         session['user']['state']['slides'][slide] = slide_content
-        session.modified = True  # Ensure session is marked as modified
+        session.modified = True
         return jsonify({'status': 'completed', 'content': slide_content})
     else:
         return jsonify({'error': 'Failed to generate slide content'}), 500
 
 def process_slide(documents, thread_id, slide, assistant_id):
     try:
+        # Get document contents from S3
+        doc_contents = []
+        for doc in documents:
+            content = s3_manager.get_document(doc['s3_key'])
+            doc_contents.append(content)
+
+        doc_content = ' '.join(doc_contents)
         logging.info(f"Processing slide: {slide}")
         language = session['user']['state'].get('current_language', 'en')
         # print('language\n', language)
@@ -203,7 +219,6 @@ def process_slide(documents, thread_id, slide, assistant_id):
             logging.error(f"Slide configuration not found for: {slide}")
             return None
 
-        doc_content = ''.join([document['content'] for document in documents])
         message_content = format_slide_content(config, doc_content)
         # print('message_content\n', message_content)
         client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
