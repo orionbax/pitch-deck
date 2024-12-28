@@ -26,7 +26,9 @@ logging.basicConfig(level=logging.CRITICAL + 1)
 # Initialize Flask
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'your_secret_key')
-
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SECURE'] = False  # Set to True if using HTTPS
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 # Enable CORS for all routes with credentials
 CORS(app, supports_credentials=True, resources={r"/*": {"origins": "*"}})
 

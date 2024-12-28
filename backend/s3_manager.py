@@ -37,6 +37,16 @@ class S3Manager:
     def upload_document(self, project_id, file_name, content):
         """Upload a document to S3 and return its key"""
         logger.info(f"Attempting to upload document: {file_name} for project: {project_id}")
+        
+        # Validate content
+        if not content:
+            logger.error("Empty content provided")
+            raise S3UploadError("Cannot upload empty or None content")
+            
+        if not isinstance(content, (str, bytes)):
+            logger.error("Invalid content type provided")
+            raise S3UploadError("Content must be string or bytes")
+
         try:
             key = f"{project_id}/documents/{file_name}"
             
@@ -53,7 +63,7 @@ class S3Manager:
             return key
         except ClientError as e:
             logger.error(f"Failed to upload document to S3: {str(e)}")
-            raise
+            raise S3UploadError(f"Failed to upload document: {str(e)}")
 
     def get_document(self, key):
         """Retrieve a document from S3"""
