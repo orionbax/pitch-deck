@@ -3,7 +3,7 @@ import React from 'react'
 import vbailogo from "../vbailogo.svg"
 
 
-const sideBar = () => {
+const SideBar = () => {
 
   
   return (
@@ -24,4 +24,4 @@ const sideBar = () => {
   )
 }
 
-export default sideBar
+export default SideBar

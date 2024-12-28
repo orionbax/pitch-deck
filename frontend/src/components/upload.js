@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
-import { useSocket } from '../api/socket';
-import { FaDownload } from 'react-icons/fa'; // Import the download icon
+import React, { useState} from 'react';
+import { FaDownload } from 'react-icons/fa';
 
 const Upload = () => {
-  const { socket, isConnected } = useSocket(); // Use the custom hook
   const [files, setFiles] = useState([]);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
   const [status, setStatus] = useState(null);
   const [fileError, setFileError] = useState('');
 
@@ -16,8 +15,13 @@ const Upload = () => {
       // Check for file size and type
       const validFiles = selectedFiles.filter(file => {
         const isValidSize = file.size <= 200 * 1024 * 1024; // 200 MB max
-        const isValidType = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'].includes(file.type);
-        
+        const isValidType = [
+          'application/pdf',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'text/plain'
+        ].includes(file.type);
+
         return isValidSize && isValidType;
       });
 
@@ -33,50 +37,68 @@ const Upload = () => {
 
   // Handle file upload
   const handleUpload = () => {
-    if (!isConnected) {
-      alert('Not connected to the server. Please try again later.');
-      return;
-    }
+    
 
     if (files.length === 0) {
       alert("Please select at least one valid file to upload.");
       return;
     }
 
-    // Prepare files and filenames for the server
-    const fileData = files.map((file) => {
-      return {
-        filename: file.name,
-        file: file,
-      };
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('documents', file);
     });
 
-    // Emit the `upload_document` event
-    socket.emit('upload_document', {
-      file: fileData.map((f) => f.file),
-      filename: fileData.map((f) => f.filename),
-    });
+    fetch('http://127.0.0.1:5000/upload_documents', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Accept': 'application/json',
+      },
+      credentials: 'include'
+    })
+    
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          setStatus(data.message);
+          setUploadedFiles(prev => [...prev, ...files.map(file => file.name)]);
+          setFiles([]); // Clear selected files
+        } else {
+          setStatus(`Error: ${data.error}`);
+        }
+      })
+      .catch(err => {
+        setStatus(`Error: ${err.message}`);
+      });
+  };
 
-    // Listen for server responses
-    socket.on('document_upload_status', (data) => {
-      if (data.status === 'success') {
-        setStatus(`Successfully uploaded: ${data.filenames.join(', ')}`);
-      } else {
-        setStatus(`Error: ${data.message}`);
-      }
-    });
+  // Handle sending data to backend on "Next"
+  const handleNext = () => {
+    fetch('http://127.0.0.1:5000/next_endpoint', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ documents: uploadedFiles }),
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          alert('Documents successfully sent to the backend.');
+          // Navigate to the next page or update UI
+        } else {
+          alert(`Error: ${data.error}`);
+        }
+      })
+      .catch(err => {
+        alert(`Error: ${err.message}`);
+      });
   };
 
   return (
     <div className="file-uploader max-w-lg mx-auto p-4">
       <h2 className="text-2xl font-semibold mb-4">Upload Files</h2>
-    {/*   {isConnected ? (
-        <p className="text-green-500">Connected to server</p>
-      ) : (
-        <p className="text-red-500">Disconnected from server</p>
-      )}
-
-      {/* White box for file upload */}
       <div
         className="upload-box border-2 border-dashed border-gray-300 p-6 text-center cursor-pointer bg-white"
         onClick={() => document.getElementById('file-input').click()}
@@ -102,8 +124,7 @@ const Upload = () => {
       {files.length > 0 && !fileError && (
         <button
           onClick={handleUpload}
-          disabled={!isConnected || files.length === 0}
-          className="mt-6 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-300"
+          className="mt-6 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700"
         >
           Upload
         </button>
@@ -111,6 +132,28 @@ const Upload = () => {
 
       {/* Status message */}
       {status && <p className="mt-4">{status}</p>}
+
+      {/* Display uploaded files */}
+      {uploadedFiles.length > 0 && (
+        <div className="uploaded-files mt-6">
+          <h3 className="text-lg font-semibold mb-2">Uploaded Documents:</h3>
+          <ul className="list-disc list-inside">
+            {uploadedFiles.map((file, index) => (
+              <li key={index}>{file}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Next button */}
+      {uploadedFiles.length > 0 && (
+        <button
+          onClick={handleNext}
+          className="mt-6 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700"
+        >
+          Next
+        </button>
+      )}
     </div>
   );
 };
