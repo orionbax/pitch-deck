@@ -1,4 +1,4 @@
-import React, { useState} from 'react';
+import React, { useState } from 'react';
 import { FaDownload } from 'react-icons/fa';
 
 const Upload = () => {
@@ -13,13 +13,13 @@ const Upload = () => {
       const selectedFiles = Array.from(e.target.files);
 
       // Check for file size and type
-      const validFiles = selectedFiles.filter(file => {
+      const validFiles = selectedFiles.filter((file) => {
         const isValidSize = file.size <= 200 * 1024 * 1024; // 200 MB max
         const isValidType = [
           'application/pdf',
           'application/msword',
           'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          'text/plain'
+          'text/plain',
         ].includes(file.type);
 
         return isValidSize && isValidType;
@@ -37,15 +37,13 @@ const Upload = () => {
 
   // Handle file upload
   const handleUpload = () => {
-    
-
     if (files.length === 0) {
-      alert("Please select at least one valid file to upload.");
+      alert('Please select at least one valid file to upload.');
       return;
     }
 
     const formData = new FormData();
-    files.forEach(file => {
+    files.forEach((file) => {
       formData.append('documents', file);
     });
 
@@ -53,22 +51,21 @@ const Upload = () => {
       method: 'POST',
       body: formData,
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
       },
-      credentials: 'include'
+      credentials: 'include', // Ensure the session is sent correctly
     })
-    
-      .then(response => response.json())
-      .then(data => {
+      .then((response) => response.json())
+      .then((data) => {
         if (data.status === 'success') {
           setStatus(data.message);
-          setUploadedFiles(prev => [...prev, ...files.map(file => file.name)]);
+          setUploadedFiles((prev) => [...prev, ...files.map((file) => file.name)]);
           setFiles([]); // Clear selected files
         } else {
           setStatus(`Error: ${data.error}`);
         }
       })
-      .catch(err => {
+      .catch((err) => {
         setStatus(`Error: ${err.message}`);
       });
   };
@@ -82,8 +79,8 @@ const Upload = () => {
       },
       body: JSON.stringify({ documents: uploadedFiles }),
     })
-      .then(response => response.json())
-      .then(data => {
+      .then((response) => response.json())
+      .then((data) => {
         if (data.status === 'success') {
           alert('Documents successfully sent to the backend.');
           // Navigate to the next page or update UI
@@ -91,9 +88,14 @@ const Upload = () => {
           alert(`Error: ${data.error}`);
         }
       })
-      .catch(err => {
+      .catch((err) => {
         alert(`Error: ${err.message}`);
       });
+  };
+
+  // Handle removing selected file
+  const handleRemoveFile = (fileName) => {
+    setFiles(files.filter((file) => file.name !== fileName));
   };
 
   return (
@@ -119,6 +121,26 @@ const Upload = () => {
 
       {/* File error message */}
       {fileError && <p className="text-red-500 mt-2">{fileError}</p>}
+
+      {/* Display selected files before upload */}
+      {files.length > 0 && (
+        <div className="selected-files mt-4">
+          <h3 className="text-lg font-semibold mb-2">Selected Files:</h3>
+          <ul className="list-disc list-inside">
+            {files.map((file) => (
+              <li key={file.name} className="flex justify-between items-center">
+                <span>{file.name}</span>
+                <button
+                  onClick={() => handleRemoveFile(file.name)}
+                  className="text-red-500 ml-2"
+                >
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Button to trigger upload */}
       {files.length > 0 && !fileError && (
