@@ -23,6 +23,9 @@ const LandingPage = () => {
       });
       console.log('Response received:', response.data); // Log the response data
       setProjectData(response.data);
+      const token = response.data.token; // Assuming the token is in the `token` field.
+      console.log('Token received:', token);
+      localStorage.setItem('authToken', token); 
       setError('');
       navigate('/upload', { state: { projectData: response.data } });
     } catch (err) {

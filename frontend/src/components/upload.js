@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { FaDownload } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
 const Upload = () => {
   const [files, setFiles] = useState([]);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [status, setStatus] = useState(null);
   const [fileError, setFileError] = useState('');
+  const token = localStorage.getItem('authToken');
+  const navigate = useNavigate()
 
   // Handle file selection
   const handleFileChange = (e) => {
@@ -52,6 +55,7 @@ const Upload = () => {
       body: formData,
       headers: {
         Accept: 'application/json',
+        Authorization: `Bearer ${token}`, // Include token in Authorization header
       },
       credentials: 'include', // Ensure the session is sent correctly
     })
@@ -72,25 +76,27 @@ const Upload = () => {
 
   // Handle sending data to backend on "Next"
   const handleNext = () => {
-    fetch('http://127.0.0.1:5000/next_endpoint', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ documents: uploadedFiles }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.status === 'success') {
-          alert('Documents successfully sent to the backend.');
-          // Navigate to the next page or update UI
-        } else {
-          alert(`Error: ${data.error}`);
-        }
-      })
-      .catch((err) => {
-        alert(`Error: ${err.message}`);
-      });
+
+    navigate('/slide');
+    // fetch('http://127.0.0.1:5000/next_endpoint', {
+    //   method: 'POST',
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //   },
+    //   body: JSON.stringify({ documents: uploadedFiles }),
+    // })
+    //   .then((response) => response.json())
+    //   .then((data) => {
+    //     if (data.status === 'success') {
+    //       alert('Documents successfully sent to the backend.');
+    //       // Navigate to the next page or update UI
+    //     } else {
+    //       alert(`Error: ${data.error}`);
+    //     }
+    //   })
+    //   .catch((err) => {
+    //     alert(`Error: ${err.message}`);
+    //   });
   };
 
   // Handle removing selected file
