@@ -276,3 +276,21 @@ class DatabaseManager:
         except Exception as e:
             logger.error(f"Error updating project token: {str(e)}")
             return False 
+
+    def get_all_slides(self, project_id):
+        """Retrieve all slides for a given project."""
+        try:
+            # Assuming you have a MongoDB collection named 'slides'
+            slides_collection = self.db['slides']
+            slides = slides_collection.find({'project_id': project_id})
+            slides_list = list(slides)
+            
+            # Debugging: Log the retrieved slides
+            logging.info(f"Retrieved {len(slides_list)} slides for project {project_id}")
+            for slide in slides_list:
+                logging.info(f"Slide: {slide}")
+            
+            return slides_list
+        except Exception as e:
+            logging.error(f"Error retrieving slides for project {project_id}: {str(e)}")
+            return None 

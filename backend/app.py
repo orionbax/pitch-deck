@@ -1,7 +1,8 @@
 import logging
 import os
 from datetime import datetime
-from flask import Flask, session, request, jsonify
+from pprint import pprint
+from flask import Flask, session, request, jsonify, send_file
 from flask_cors import CORS
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -14,6 +15,12 @@ import time
 from database import DatabaseManager
 from s3_manager import S3Manager
 import secrets  # Add this import for token generation
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfbase.pdfmetrics import stringWidth
+
+import tempfile
 
 
 load_dotenv()
@@ -524,6 +531,121 @@ def test_cors():
 # def clear_session_on_startup():
 #     session.clear()
 #     logging.info("Session cleared on startup")
+
+@app.route('/download_pdf', methods=['POST'])
+@verify_token
+def download_pdf():
+    logging.info("Downloading PDF")
+    project = request.project
+    project_id = project['project_id']
+    
+    # Retrieve documents from the database
+    # documents = db_manager.get_project_documents(project_id)
+    project_data = db_manager.get_project(project_id)
+    
+    # if not documents:
+    #     return jsonify({'error': 'No documents available for this project'}), 404
+
+    # Extract slide content from documents
+    slides = project_data['state']['slides']#[]
+    # print('the slides are: ', slides, 'type of slides is: ', type(slides))
+    # for document in documents:
+    #     # Assuming each document contains slide content
+    #     slide_content = document.get('content', '')
+    #     slide_name = document.get('slide_name', 'Unnamed Slide')
+    #     slides.append({'slide_name': slide_name, 'content': slide_content})
+
+    if not slides:
+        return jsonify({'error': 'No slides available for this project'}), 404
+    # pprint(documents)
+    # pprint(slides)
+    # Create a temporary file to store the PDF
+    selected_language = project_data['state']['current_language']
+    # with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_pdf:
+    #     # c = canvas.Canvas(temp_pdf.name, pagesize=letter)
+    #     # width, height = letter
+    #     pdf_buffer = io.BytesIO()
+    #     c = canvas.Canvas(pdf_buffer, pagesize=A4)
+    #     width, height = A4
+    #     margin = 60  # Increased margin for better readability
+    #     y_position_start = height - margin
+
+    #     # Set default font sizes
+    #     title_font_size = 20  # Smaller but still prominent
+    #     text_font_size = 10  # Smaller for body text
+    #     line_height = 14  # Adjusted line height for readability
+    #     bullet_symbol = "•" if selected_language == "en" else "-"  # Choose bullet symbol based on language
+    #     first_page = True  # Track if it's the first page
+    #     # for slide_name, slide_content in slides.items():
+    #     #     # print('the slide is: ', slide, 'type of slide is: ', type(slide))
+    #     #     # Add slide content to the PDF
+    #     #     # for slide_name, slide_content in slide.items():
+    #     #     c.drawString(72, height - 72, slide_name)
+    #     #     text = c.beginText(72, height - 100)
+    #     #     text.setFont("Helvetica", 12)
+    #     #     text.setLeading(14)
+    #     #     text.textLines(slide_content)
+    #     #     c.drawText(text)
+    #     #     c.showPage()
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_pdf:
+        c = canvas.Canvas(temp_pdf.name, pagesize=A4)
+        width, height = A4
+        margin = 60  # Increased margin for better readability
+        y_position_start = height - margin
+
+        first_page = True  # Track if it's the first page
+
+        for slide_name, slide_content in slides.items():
+            if not first_page:
+                c.showPage()  # Start a new page for each slide except the first
+            else:
+                first_page = False  # Skip creating a new page for the first slide
+
+            y_position = y_position_start
+
+            # Draw slide title
+            c.setFont("Helvetica-Bold", 20)
+            c.drawString(margin, y_position, slide_name)
+            y_position -= 32  # Space after title
+
+            # Draw slide content
+            c.setFont("Helvetica", 10)
+            for line in slide_content.split('\n'):
+                if line.strip():
+                    y_position = draw_text_paragraph(
+                        c, line, y_position, margin, width - 2 * margin,
+                        font="Helvetica", font_size=10, line_height=14
+                    )
+
+        c.save()
+
+    return send_file(temp_pdf.name, as_attachment=True, download_name=f"{project_id}_slides.pdf")
+def draw_text_paragraph(c, text, y_position, x_position, max_width, font="Helvetica", font_size=10, line_height=14):
+    """
+    Draws a text paragraph within specified width, handling line wrapping.
+    Returns the updated y_position after drawing the text.
+    """
+    c.setFont(font, font_size)
+    words = text.split()
+    line = ""
+
+    for word in words:
+        # Check if adding the next word would exceed max width
+        if stringWidth(line + word, font, font_size) <= max_width:
+            line += f"{word} "
+        else:
+            # Draw the current line and reset
+            c.drawString(x_position, y_position, line.strip())
+            y_position -= line_height
+            line = f"{word} "
+
+    # Draw the last line if there is any leftover text
+    if line:
+        c.drawString(x_position, y_position, line.strip())
+        y_position -= line_height
+    print('the y_position is: ', y_position)
+    return y_position
 
 if __name__ == '__main__':
     logging.info("Starting Flask app")
