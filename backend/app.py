@@ -539,7 +539,8 @@ def download_pdf():
     project_data = db_manager.get_project(project_id)
     
     original_slides = project_data['state']['slides']#[]
-    slides = sort_slides(original_slides)
+    slides = sort_slides(original_slides, 
+                         project_data['state']['current_language'])
 
     if not slides:
         return jsonify({'error': 'No slides available for this project'}), 404
@@ -611,19 +612,20 @@ def download_pdf():
 
     return send_file(temp_pdf.name, as_attachment=True, download_name=f"{project_id}_slides.pdf")
 
-def sort_slides(slides):
-    all_slides = []
+from pprint import pprint
+def sort_slides(slides, selected_language):    
+    selected_slides = SLIDE_TYPES_ENGLISH if selected_language == 'en' else SLIDE_TYPES_NORWEGIAN
+    all_slides = [slide_name for slide_name, _ in selected_slides.items()]
     new_slides = []
-    for slide_name, slide_content in reversed(slides.items()):
-        all_slides.append(slide_name)
-    for slide_name, slide_content in optional_slides_english.items():
-        all_slides.append(slide_name)
-
+    # print('the all_slides are: ', end='')
+    # pprint( all_slides)
     for slide_name in all_slides:
         for name, content in slides.items():
             if name == slide_name:
                 new_slides.append(name)
-
+    # print('The new slides are: ', end='')
+    # pprint(new_slides)
+    
     return new_slides
 
 def draw_text_paragraph(c, text, y_position, x_position, max_width, font="Helvetica", font_size=10, line_height=14):
