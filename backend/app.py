@@ -488,6 +488,7 @@ def format_slide_content(config, doc_content):
 
         Directly output the slide content below without additional instructions.
     """
+    # print('the message_content_english is: ', message_content_english)
 
     message_content_norwegian = f"""
         Svar på norsk. Svar kun med punktlister, og unngå introduksjonstekster og forklaringer.
@@ -538,55 +539,18 @@ def download_pdf():
     logging.info("Downloading PDF")
     project = request.project
     project_id = project['project_id']
-    
-    # Retrieve documents from the database
-    # documents = db_manager.get_project_documents(project_id)
     project_data = db_manager.get_project(project_id)
     
-    # if not documents:
-    #     return jsonify({'error': 'No documents available for this project'}), 404
-
-    # Extract slide content from documents
-    slides = project_data['state']['slides']#[]
+    original_slides = project_data['state']['slides']#[]
+    slides = sort_slides(original_slides)
     # print('the slides are: ', slides, 'type of slides is: ', type(slides))
-    # for document in documents:
-    #     # Assuming each document contains slide content
-    #     slide_content = document.get('content', '')
-    #     slide_name = document.get('slide_name', 'Unnamed Slide')
-    #     slides.append({'slide_name': slide_name, 'content': slide_content})
+
 
     if not slides:
         return jsonify({'error': 'No slides available for this project'}), 404
-    # pprint(documents)
-    # pprint(slides)
-    # Create a temporary file to store the PDF
+    
     selected_language = project_data['state']['current_language']
-    # with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_pdf:
-    #     # c = canvas.Canvas(temp_pdf.name, pagesize=letter)
-    #     # width, height = letter
-    #     pdf_buffer = io.BytesIO()
-    #     c = canvas.Canvas(pdf_buffer, pagesize=A4)
-    #     width, height = A4
-    #     margin = 60  # Increased margin for better readability
-    #     y_position_start = height - margin
-
-    #     # Set default font sizes
-    #     title_font_size = 20  # Smaller but still prominent
-    #     text_font_size = 10  # Smaller for body text
-    #     line_height = 14  # Adjusted line height for readability
-    #     bullet_symbol = "•" if selected_language == "en" else "-"  # Choose bullet symbol based on language
-    #     first_page = True  # Track if it's the first page
-    #     # for slide_name, slide_content in slides.items():
-    #     #     # print('the slide is: ', slide, 'type of slide is: ', type(slide))
-    #     #     # Add slide content to the PDF
-    #     #     # for slide_name, slide_content in slide.items():
-    #     #     c.drawString(72, height - 72, slide_name)
-    #     #     text = c.beginText(72, height - 100)
-    #     #     text.setFont("Helvetica", 12)
-    #     #     text.setLeading(14)
-    #     #     text.textLines(slide_content)
-    #     #     c.drawText(text)
-    #     #     c.showPage()
+   
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_pdf:
         c = canvas.Canvas(temp_pdf.name, pagesize=A4)
@@ -595,7 +559,8 @@ def download_pdf():
         y_position_start = height - margin
 
         first_page = True  # Track if it's the first page
-
+        bullet_symbol = "•" if selected_language == "en" else "-"  # Choose bullet symbol based on language
+        # for slide_name in
         for slide_name, slide_content in slides.items():
             if not first_page:
                 c.showPage()  # Start a new page for each slide except the first
@@ -609,18 +574,59 @@ def download_pdf():
             c.drawString(margin, y_position, slide_name)
             y_position -= 32  # Space after title
 
-            # Draw slide content
-            c.setFont("Helvetica", 10)
-            for line in slide_content.split('\n'):
-                if line.strip():
-                    y_position = draw_text_paragraph(
-                        c, line, y_position, margin, width - 2 * margin,
-                        font="Helvetica", font_size=10, line_height=14
-                    )
+            # Determine slide type and format content accordingly
+            if slide_name.lower() == 'introduction':
+                # Introduction slide with paragraph format
+                for line in slide_content.split('\n'):
+                    if line.strip():
+                        line = line.replace('**', '').strip()
+                        if line.startswith('- '):
+                            line = line[2:]
+
+                        # Adjust x position and max width for bullet points
+                        bullet_indent = margin + 10
+                        bullet_width = width - 2 * margin - 20
+                        c.setFont("Helvetica", 10)
+                        y_position = draw_text_paragraph(
+                            c, f"{bullet_symbol} {line}", y_position, margin, width - 2 * margin,
+                            font="Helvetica", font_size=10, line_height=14
+                        )
+                        print('the y_position is: ', y_position)
+            else:
+                # Bullet point format for other slides
+                for line in slide_content.split('\n'):
+                    if line.strip():
+                        line = line.replace('**', '').strip()
+                        if line.startswith('- '):
+                            line = line[2:]
+
+                        # Adjust x position and max width for bullet points
+                        bullet_indent = margin + 10
+                        bullet_width = width - 2 * margin - 20
+                        c.setFont("Helvetica", 10)
+                        y_position = draw_text_paragraph(
+                            c, f"{bullet_symbol} {line}", y_position, bullet_indent, bullet_width,
+                            font="Helvetica", font_size=10, line_height=14
+                        )
 
         c.save()
 
     return send_file(temp_pdf.name, as_attachment=True, download_name=f"{project_id}_slides.pdf")
+
+def sort_slides(slides):
+    all_slides = []
+    new_slides = []
+    for slide_name, slide_content in reversed(slides.items()):
+        all_slides.append(slide_name)
+    for slide_name, slide_content in optional_slides_english.items():
+        all_slides.append(slide_name)
+
+    for slide_name in all_slides:
+        if slide_name in slides:
+            new_slides.append(slides[slide_name])
+
+    return new_slides
+
 def draw_text_paragraph(c, text, y_position, x_position, max_width, font="Helvetica", font_size=10, line_height=14):
     """
     Draws a text paragraph within specified width, handling line wrapping.
