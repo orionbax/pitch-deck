@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { usePhase } from '../pages/context/phaseContext';
 
 const Upload = () => {
-  const { setPhase } = usePhase();
+  const { setPhase, language } = usePhase(); // Get current language and phase
   const [files, setFiles] = useState([]);
   const [uploadedFiles, setUploadedFiles] = useState([]); // Keep track of uploaded files
   const [status, setStatus] = useState(null);
@@ -16,6 +16,34 @@ const Upload = () => {
   useEffect(() => {
     setPhase("document-uploading");
   }, [setPhase]);
+
+  // Define text for English and Norwegian
+  const text = {
+    en: {
+      uploadBoxTitle: 'Supported formats: PDF, DOCX, DOC, TXT (Max 200MB)',
+      selectedFiles: 'Selected Files:',
+      uploadButton: 'Upload',
+      status: 'Status:',
+      uploadedFiles: 'Uploaded Documents:',
+      nextButton: 'Next',
+      fileError: 'Some files are either too large or have unsupported formats.',
+      fileTooLarge: 'File size should not exceed 200MB.',
+      fileFormatError: 'Unsupported file format. Please upload a PDF, DOCX, DOC, or TXT.',
+    },
+    no: {
+      uploadBoxTitle: 'Støttede formater: PDF, DOCX, DOC, TXT (Maks 200MB)',
+      selectedFiles: 'Valgte Filer:',
+      uploadButton: 'Last opp',
+      status: 'Status:',
+      uploadedFiles: 'Opplastede Dokumenter:',
+      nextButton: 'Neste',
+      fileError: 'Noen filer er enten for store eller har ikke støttede formater.',
+      fileTooLarge: 'Filstørrelse kan ikke overskride 200MB.',
+      fileFormatError: 'Ikke-støttet filformat. Vennligst last opp en PDF, DOCX, DOC eller TXT.',
+    },
+  };
+
+  const currentText = text[language] || text.en; // Use selected language or default to English
 
   // Handle file selection
   const handleFileChange = (e) => {
@@ -36,7 +64,7 @@ const Upload = () => {
       });
 
       if (validFiles.length !== selectedFiles.length) {
-        setFileError('Some files are either too large or have unsupported formats.');
+        setFileError(currentText.fileError);
       } else {
         setFileError('');
       }
@@ -48,7 +76,7 @@ const Upload = () => {
   // Handle file upload
   const handleUpload = () => {
     if (files.length === 0) {
-      alert('Please select at least one valid file to upload.');
+      alert(currentText.fileFormatError);
       return;
     }
 
@@ -88,26 +116,6 @@ const Upload = () => {
   const handleNext = () => {
     setPhase("slide-selection");
     navigate('/slide');
-
-    // fetch('http://127.0.0.1:5000/next_endpoint', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify({ documents: uploadedFiles }),
-    // })
-    //   .then((response) => response.json())
-    //   .then((data) => {
-    //     if (data.status === 'success') {
-    //       alert('Documents successfully sent to the backend.');
-    //       // Navigate to the next page or update UI
-    //     } else {
-    //       alert(`Error: ${data.error}`);
-    //     }
-    //   })
-    //   .catch((err) => {
-    //     alert(`Error: ${err.message}`);
-    //   });
   };
 
   // Handle removing selected file
@@ -123,7 +131,7 @@ const Upload = () => {
       >
         <SlCloudUpload size={40} color="#004F59" />
         <p className="mt-4 text-base text-[#676767]">
-          Supported formats: PDF, DOCX, DOC, TXT (Max 200MB)
+          {currentText.uploadBoxTitle}
         </p>
         <input
           type="file"
@@ -141,7 +149,7 @@ const Upload = () => {
       {/* Display selected files before upload */}
       {files.length > 0 && (
         <div className="selected-files mt-4">
-          <h3 className="text-lg font-normal mb-2">Selected Files:</h3>
+          <h3 className="text-lg font-normal mb-2">{currentText.selectedFiles}</h3>
           <ul className="list-disc list-inside">
             {files.map((file) => (
               <li key={file.name} className="flex justify-between items-center mb-2">
@@ -165,7 +173,7 @@ const Upload = () => {
           onClick={handleUpload}
           className="mt-6 bg-[#004F59] text-white py-2 px-4 rounded-md"
         >
-          Upload
+          {currentText.uploadButton}
         </button>
       )}
 
@@ -175,7 +183,7 @@ const Upload = () => {
       {/* Display uploaded files */}
       {uploadedFiles.length > 0 && (
         <div className="uploaded-files mt-6">
-          <h3 className="text-lg font-semibold mb-2">Uploaded Documents:</h3>
+          <h3 className="text-lg font-semibold mb-2">{currentText.uploadedFiles}</h3>
           <ul className="list-disc list-inside">
             {uploadedFiles.map((file, index) => (
               <li key={index}>{file}</li>
@@ -190,7 +198,7 @@ const Upload = () => {
           onClick={handleNext}
           className="mt-6 bg-[#D3EC99] text-[#00383D] py-4 px-36 rounded-3xl hover:bg-[#b1d362]"
         >
-          Next
+          {currentText.nextButton}
         </button>
       )}
     </div>

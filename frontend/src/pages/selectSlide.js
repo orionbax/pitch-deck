@@ -9,7 +9,7 @@ import StatusSideBar from '../components/statusSideBar'
 const SelectSlide = () => {
 
   return (
-    <div className='flex  '>
+    <div className='flex w-screen '>
         {/*<StatusSideBar/> */}
         <SlideSelection/>
         
