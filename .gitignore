@@ -18,9 +18,17 @@
 !frontend/src/components
 !frontend/src/components/statusSideBar.js
 !frontend/src/pages
+!frontend/src/pages/context/
+!frontend/src/pages/context/phaseContext.js
 !frontend/src/pages/landingPage.js
 !frontend/src/pages/selectSlide.js
+!frontend/src/pages/preview.js
 !frontend/src/components/slideSelection.js
+!frontend/src/components/phase.js
+!frontend/src/components/navigation.js
+
+!frontend/src/components/previewSlide.js
+!frontend/src/components/generateSlide.js
 !frontend/package-lock.json
 !frontend/package.json
 !frontend/tailwind.config.json

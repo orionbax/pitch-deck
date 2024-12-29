@@ -10,7 +10,7 @@ const SelectSlide = () => {
 
   return (
     <div className='flex  '>
-        <StatusSideBar/>
+        {/*<StatusSideBar/> */}
         <SlideSelection/>
         
          
