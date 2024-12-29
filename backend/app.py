@@ -1,21 +1,20 @@
 import logging
 import os
 from datetime import datetime
-from pprint import pprint
+# from pprint import pprint
 from flask import Flask, session, request, jsonify, send_file
 from flask_cors import CORS
 from dotenv import load_dotenv
 from openai import OpenAI
 from messages import SLIDE_TYPES_ENGLISH, SLIDE_TYPES_NORWEGIAN
-import threading
-import io
+
 import PyPDF2
 from docx import Document
 import time
 from database import DatabaseManager
 from s3_manager import S3Manager
 import secrets  # Add this import for token generation
-from reportlab.lib.pagesizes import letter
+# from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfbase.pdfmetrics import stringWidth
@@ -169,7 +168,8 @@ def create_project():
         return jsonify({
             'token': existing_project['token'],
             'state': existing_project.get('state', {'current_language': 'en', 'slides': {}}),
-            'message': 'Using existing project'
+            'message': 'Using existing project',
+            'documents': True if existing_project.get('documents', False) else False
         })
 
     # Generate secure token for new project
@@ -316,7 +316,9 @@ def process_slide(documents, thread_id, slide, assistant_id):
         language = project['state'].get('current_language', 'en')
         
         slide_config = SLIDE_TYPES_ENGLISH if language == "en" else SLIDE_TYPES_NORWEGIAN
-        config = slide_config.get(slide)
+        slide_name = slide.lower().replace(' ', '_')
+        print('the slide name is: ', slide_name)
+        config = slide_config.get(slide_name, None)
 
         if not config:
             logging.error(f"Slide configuration not found for: {slide}")
@@ -488,7 +490,6 @@ def format_slide_content(config, doc_content):
 
         Directly output the slide content below without additional instructions.
     """
-    # print('the message_content_english is: ', message_content_english)
 
     message_content_norwegian = f"""
         Svar på norsk. Svar kun med punktlister, og unngå introduksjonstekster og forklaringer.
@@ -528,10 +529,6 @@ def format_slide_content(config, doc_content):
 def test_cors():
     return jsonify({'message': 'CORS is working!'})
 
-# @app.before_first_request
-# def clear_session_on_startup():
-#     session.clear()
-#     logging.info("Session cleared on startup")
 
 @app.route('/download_pdf', methods=['POST'])
 @verify_token
@@ -543,8 +540,6 @@ def download_pdf():
     
     original_slides = project_data['state']['slides']#[]
     slides = sort_slides(original_slides)
-    # print('the slides are: ', slides, 'type of slides is: ', type(slides))
-
 
     if not slides:
         return jsonify({'error': 'No slides available for this project'}), 404
@@ -561,7 +556,11 @@ def download_pdf():
         first_page = True  # Track if it's the first page
         bullet_symbol = "•" if selected_language == "en" else "-"  # Choose bullet symbol based on language
         # for slide_name in
-        for slide_name, slide_content in slides.items():
+        # for slide_name, slide_content in slides.items():
+        for slide_name in slides:
+            # print('the slide_name is: ', slide_name)
+            # slide_name = original_slides[]
+            slide_content = original_slides[slide_name]
             if not first_page:
                 c.showPage()  # Start a new page for each slide except the first
             else:
@@ -591,7 +590,6 @@ def download_pdf():
                             c, f"{bullet_symbol} {line}", y_position, margin, width - 2 * margin,
                             font="Helvetica", font_size=10, line_height=14
                         )
-                        print('the y_position is: ', y_position)
             else:
                 # Bullet point format for other slides
                 for line in slide_content.split('\n'):
@@ -622,8 +620,9 @@ def sort_slides(slides):
         all_slides.append(slide_name)
 
     for slide_name in all_slides:
-        if slide_name in slides:
-            new_slides.append(slides[slide_name])
+        for name, content in slides.items():
+            if name == slide_name:
+                new_slides.append(name)
 
     return new_slides
 
@@ -650,7 +649,6 @@ def draw_text_paragraph(c, text, y_position, x_position, max_width, font="Helvet
     if line:
         c.drawString(x_position, y_position, line.strip())
         y_position -= line_height
-    print('the y_position is: ', y_position)
     return y_position
 
 if __name__ == '__main__':
