@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { usePhase } from "../pages/context/phaseContext";
 
 const DownloadButton = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState(""); // State to hold the success message
-
+    const {phase, setPhase, baseUrl} = usePhase()
     const handleDownload = async () => {
         // Retrieve the bearer token from local storage
         const token = localStorage.getItem("authToken");
@@ -23,7 +24,7 @@ const DownloadButton = () => {
         try {
             // Fetch project data using the bearer token when the button is clicked
             const response = await axios.post(
-                "http://127.0.0.1:5000/download_pdf", // Endpoint to get the PDF
+                `${baseUrl}/download_pdf`, // Endpoint to get the PDF
                 {},
                 {
                     headers: {
@@ -47,6 +48,8 @@ const DownloadButton = () => {
         } finally {
             setLoading(false);
         }
+        setPhase("download-pdf")
+
     };
 
     return (

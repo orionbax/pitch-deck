@@ -11,12 +11,14 @@ const PhaseIndicator = () => {
       "slide-selection": "Phase 2: Slide Selection",
       "content-generating": "Phase 3: Content Generating",
       "preview-slide": "Phase 4: Preview Slide",
+      "download-pdf": "Phase 5: Download",
     },
     no: {
       "document-uploading": "Fase 1: Dokumentopplasting",
       "slide-selection": "Fase 2: Lysbildevalg",
       "content-generating": "Fase 3: Innholdsgenerering",
       "preview-slide": "Fase 4: Lysbildesjekk",
+      "download-pdf": "Fase 5: laste ned",
     },
   };
 

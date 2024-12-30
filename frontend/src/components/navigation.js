@@ -62,18 +62,7 @@ const Navigation = () => {
         </div>
 
         {/* Preview Navigation */}
-        <div>
-          <label htmlFor="preview" className="flex items-center space-x-2">
-            <input
-              type="radio"
-              id="preview"
-              name="navigation"
-              onClick={() => handleNavigation("/preview")}
-              className="accent-blue-500"
-            />
-            <span>{currentLabels.preview}</span>
-          </label>
-        </div>
+        
       </div>
     </div>
   );

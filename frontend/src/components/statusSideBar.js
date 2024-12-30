@@ -9,7 +9,7 @@ const StatusSideBar = () => {
   const token = localStorage.getItem('authToken');
   const [selectedLanguage, setSelectedLanguage] = useState("en"); // default to English
   const [selectedOption, setSelectedOption] = useState("structured-editing"); // Default to structured-editing
-  const { setEditMode, language, set_language } = usePhase();
+  const { setEditMode, language, set_language , baseUrl} = usePhase();
 
   // Syncing local state with phase context
   useEffect(() => {
@@ -31,7 +31,7 @@ const StatusSideBar = () => {
     setSelectedLanguage(newLanguage);
 
     try {
-      const response = await fetch('http://127.0.0.1:5000/set_language', {
+      const response = await fetch(`${baseUrl}/set_language`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

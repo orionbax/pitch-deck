@@ -16,6 +16,8 @@
 !frontend/public/
 !frontend/src/
 !frontend/src/components
+!frontend/src/components/deleteProject.js
+
 !frontend/src/components/statusSideBar.js
 !frontend/src/pages
 !frontend/src/pages/context/
@@ -30,6 +32,8 @@
 !frontend/src/components/navigation.js
 !frontend/src/components/previewSlide.js
 !frontend/src/components/generateSlide.js
+!frontend/src/components/generatedContent.js
+
 !frontend/package-lock.json
 !frontend/package.json
 !frontend/tailwind.config.json

@@ -5,11 +5,12 @@ import { useNavigate } from 'react-router-dom';
 import { usePhase } from '../pages/context/phaseContext';
 
 const Upload = () => {
-  const { setPhase, language } = usePhase(); // Get current language and phase
+  const { setPhase, language, baseUrl } = usePhase();
   const [files, setFiles] = useState([]);
-  const [uploadedFiles, setUploadedFiles] = useState([]); // Keep track of uploaded files
+  const [uploadedFiles, setUploadedFiles] = useState([]);
   const [status, setStatus] = useState(null);
   const [fileError, setFileError] = useState('');
+  const [isUploading, setIsUploading] = useState(false); // Track uploading state
   const token = localStorage.getItem('authToken');
   const navigate = useNavigate();
 
@@ -17,12 +18,12 @@ const Upload = () => {
     setPhase("document-uploading");
   }, [setPhase]);
 
-  // Define text for English and Norwegian
   const text = {
     en: {
       uploadBoxTitle: 'Supported formats: PDF, DOCX, DOC, TXT (Max 200MB)',
       selectedFiles: 'Selected Files:',
       uploadButton: 'Upload',
+      uploadingButton: 'Uploading...', // Add uploading state text
       status: 'Status:',
       uploadedFiles: 'Uploaded Documents:',
       nextButton: 'Next',
@@ -34,6 +35,7 @@ const Upload = () => {
       uploadBoxTitle: 'Støttede formater: PDF, DOCX, DOC, TXT (Maks 200MB)',
       selectedFiles: 'Valgte Filer:',
       uploadButton: 'Last opp',
+      uploadingButton: 'Laster opp...', // Add uploading state text
       status: 'Status:',
       uploadedFiles: 'Opplastede Dokumenter:',
       nextButton: 'Neste',
@@ -43,16 +45,13 @@ const Upload = () => {
     },
   };
 
-  const currentText = text[language] || text.en; // Use selected language or default to English
+  const currentText = text[language] || text.en;
 
-  // Handle file selection
   const handleFileChange = (e) => {
     if (e.target.files) {
       const selectedFiles = Array.from(e.target.files);
-
-      // Check for file size and type
       const validFiles = selectedFiles.filter((file) => {
-        const isValidSize = file.size <= 200 * 1024 * 1024; // 200 MB max
+        const isValidSize = file.size <= 200 * 1024 * 1024;
         const isValidType = [
           'application/pdf',
           'application/msword',
@@ -69,58 +68,57 @@ const Upload = () => {
         setFileError('');
       }
 
-      setFiles(validFiles); // Update selected files state
+      setFiles(validFiles);
     }
   };
 
-  // Handle file upload
   const handleUpload = () => {
     if (files.length === 0) {
       alert(currentText.fileFormatError);
       return;
     }
 
+    setIsUploading(true); // Set uploading state to true
+
     const formData = new FormData();
     files.forEach((file) => {
       formData.append('documents', file);
     });
 
-    // Log token in console for debugging
-    console.log('Sending token with the request:', token);
-
-    fetch('http://127.0.0.1:5000/upload_documents', {
+    fetch(`${baseUrl}/upload_documents`, {
       method: 'POST',
       body: formData,
       headers: {
         Accept: 'application/json',
-        Authorization: `Bearer ${token}`, // Include token in Authorization header
+        Authorization: `Bearer ${token}`,
       },
-      credentials: 'include', // Ensure the session is sent correctly
+      credentials: 'include',
     })
       .then((response) => response.json())
       .then((data) => {
         if (data.status === 'success') {
           setStatus(data.message);
-          setUploadedFiles((prev) => [...prev, ...files.map((file) => file.name)]); // Append new files to uploadedFiles state
-          setFiles([]); // Clear selected files for the next upload
+          setUploadedFiles((prev) => [...prev, ...files.map((file) => file.name)]);
+          setFiles([]);
         } else {
           setStatus(`Error: ${data.error}`);
         }
       })
       .catch((err) => {
         setStatus(`Error: ${err.message}`);
+      })
+      .finally(() => {
+        setIsUploading(false); // Reset uploading state after request completes
       });
   };
 
-  // Handle sending data to backend on "Next"
   const handleNext = () => {
     setPhase("slide-selection");
     navigate('/slide');
   };
 
-  // Handle removing selected file
   const handleRemoveFile = (fileName) => {
-    setFiles(files.filter((file) => file.name !== fileName)); // Remove file from selected files
+    setFiles(files.filter((file) => file.name !== fileName));
   };
 
   return (
@@ -143,10 +141,8 @@ const Upload = () => {
         />
       </div>
 
-      {/* File error message */}
       {fileError && <p className="text-red-500 mt-2">{fileError}</p>}
 
-      {/* Display selected files before upload */}
       {files.length > 0 && (
         <div className="selected-files mt-4">
           <h3 className="text-lg font-normal mb-2">{currentText.selectedFiles}</h3>
@@ -167,20 +163,18 @@ const Upload = () => {
         </div>
       )}
 
-      {/* Button to trigger upload */}
       {files.length > 0 && !fileError && (
         <button
           onClick={handleUpload}
           className="mt-6 bg-[#004F59] text-white py-2 px-4 rounded-md"
+          disabled={isUploading} // Disable button while uploading
         >
-          {currentText.uploadButton}
+          {isUploading ? currentText.uploadingButton : currentText.uploadButton}
         </button>
       )}
 
-      {/* Status message */}
       {status && <p className="mt-4">{status}</p>}
 
-      {/* Display uploaded files */}
       {uploadedFiles.length > 0 && (
         <div className="uploaded-files mt-6">
           <h3 className="text-lg font-semibold mb-2">{currentText.uploadedFiles}</h3>
@@ -192,7 +186,6 @@ const Upload = () => {
         </div>
       )}
 
-      {/* Next button */}
       {uploadedFiles.length > 0 && (
         <button
           onClick={handleNext}

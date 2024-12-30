@@ -3,11 +3,13 @@ import { FaArrowRight } from "react-icons/fa";
 import vbailogo from "../vbailogo.svg";
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { usePhase } from './context/phaseContext';
 
 const LandingPage = () => {
   const [projectName, setProjectName] = useState('project');
   const [projectData, setProjectData] = useState(null);
   const [error, setError] = useState('');
+  const {setProject_id}  = usePhase()
   const navigate = useNavigate();
 
   const handleCreateProject = async () => {
@@ -27,6 +29,7 @@ const LandingPage = () => {
       console.log('Token received:', token);
       localStorage.setItem('authToken', token); 
       setError('');
+      setProject_id(projectName)
       navigate('/upload', { state: { projectData: response.data } });
     } catch (err) {
       console.error('Error occurred:', err); // Log the error if there's an issue
