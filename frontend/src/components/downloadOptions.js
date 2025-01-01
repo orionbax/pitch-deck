@@ -10,7 +10,6 @@ const DownloadButton = () => {
     const handleDownload = async () => {
         // Retrieve the bearer token from local storage
         const token = localStorage.getItem("authToken");
-        console.log("downloadtoken", token);
 
         if (!token) {
             setError("No authentication token found.");
@@ -55,15 +54,10 @@ const DownloadButton = () => {
     return (
         <div>
             <button
+                className="text-[#004F59] bg-[#D3EC99] px-20 py-4 rounded-[50px]"
                 onClick={handleDownload}
                 disabled={loading}
-                style={{
-                    padding: "10px 20px",
-                    backgroundColor: "#4CAF50",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "5px",
-                }}
+                
             >
                 {loading ? "Exporting..." : "Export as PDF"}
             </button>

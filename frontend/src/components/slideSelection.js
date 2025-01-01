@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { usePhase } from "../pages/context/phaseContext";
 import GenereatedContent from "./generatedContent";
 import DownloadButton from "./downloadOptions";
-import Delete from "./deleteProject";
+import Delete from "./deleteProject"; 
 
 const SlideSelection = () => {
   const slideOrder = [
@@ -159,15 +159,23 @@ const SlideSelection = () => {
     setIsGenerationComplete(true);
   };
 
-  useEffect(() => {
-    console.log("Current responses:", responses);
-  }, [responses]);
+  // useEffect(() => {
+  //   console.log("Current responses:", responses);
+  // }, [responses]);
+
 
   return (
-    <div className="px-16 py-4 w-3/4">
+    <div className="px-8  w-3/4">
+
+   
+ 
+
       {!isGenerating ? (
         <div>
+
           <h1 className="text-4xl text-[#004F59] font-semibold pb-3">{texts.requiredSlides}</h1>
+
+          
           <div className="flex text-xl gap-4 text-gray-600 my-3 font-semibold">
             <div className="flex-1 flex flex-col gap-4">
               {requiredSlides.slice(0, 3).map((slide, index) => (
@@ -210,16 +218,16 @@ const SlideSelection = () => {
             </div>
           </div>
 
-          <div className="flex justify-between mt-6">
+          <div className="flex justify-center mt-6">
             <button
               onClick={handleSubmit}
-              className="bg-[#004F59] px-16 py-1 rounded-[40px] text-white "
+              className="bg-[#004F59] px-16 py-4 rounded-[60px] text-white "
               disabled={isProcessing}
             >
               {isProcessing ? texts.processing : texts.confirmSelection}
             </button>
             
-            <Delete />
+            
           </div>
         </div>
       ) : (

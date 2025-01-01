@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { usePhase } from "../pages/context/phaseContext";
 import { useNavigate } from "react-router-dom";
+
+
 const DeleteProjectComponent = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const { project_id , baseUrl} = usePhase(); // Get project_id from context
+  const { project_id , baseUrl, language} = usePhase(); // Get project_id from context
   const [status, setStatus] = useState(false)
   const navigate = useNavigate()
 
@@ -37,11 +39,12 @@ const DeleteProjectComponent = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ project_id: project_id }), // Send the project_id from context
+        body: JSON.stringify({ project_id: project_id }), 
       });
 
       const result = await response.json();
       console.log(result, "deletresult")
+      console.log("delete result", result)
 
       if (response.ok) {
         setMessage(`Project with ID "${project_id}" deleted successfully.`);
@@ -58,14 +61,14 @@ const DeleteProjectComponent = () => {
   };
 
   return (
-    <div className="p-4 ">
+    <div className=" ">
       <div className="flex items-center justify-center gap-4">
         <button
           onClick={handleDelete}
-          className="bg-red-400 text-white py-2 px-4 rounded disabled:opacity-50"
+          className="bg-red-500 text-white px-20 py-4 rounded-[50px] disabled:opacity-50"
           disabled={loading} // Disable button while loading
         >
-          {loading ? "Deleting..." : "Delete Project"} {/* Show loading text */}
+          {loading ? "Deleting..." : "Delete Project"} 
         </button>
         {message && <p className="mt-4 text-black">{message}</p>} {/* Show message */}
       </div>

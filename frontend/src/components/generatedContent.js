@@ -3,6 +3,7 @@ import axios from 'axios';
 import DownloadButton from './downloadOptions';
 import { usePhase } from '../pages/context/phaseContext';
 import Delete  from './deleteProject'
+import { useNavigate } from 'react-router-dom';
 
 const GeneratedContent = ({ responses = [], isGenerationComplete }) => {
   const [slides, setSlides] = useState(responses);
@@ -11,8 +12,13 @@ const GeneratedContent = ({ responses = [], isGenerationComplete }) => {
   const [editedContent, setEditedContent] = useState({}); // Store edited content per slide
   const [preview, setPreview] = useState(false);
   const {phase, setPhase, baseUrl} = usePhase()
+  const navigate = useNavigate()
 
   const token = localStorage.getItem('authToken');
+
+  const handleModify = () => {
+      navigate('/slide')
+  }
 
   const handleEditRequest = async (slide) => {
     try {
@@ -75,6 +81,9 @@ const GeneratedContent = ({ responses = [], isGenerationComplete }) => {
     <div>
       <div>
         <h2 className="text-3xl font-semibold text-[#004F59]">Slide Content</h2>
+        { responses.length === 0 && (
+          <div className='py-8 text-xl font-medium text-[#004F59]'>Generating slide content ...</div>
+        )}
         <div className="  overflow-y-auto">
           {responses.map((item, index) => (
             <div key={index} className="bg-gray-100 p-4 ">
@@ -130,19 +139,22 @@ const GeneratedContent = ({ responses = [], isGenerationComplete }) => {
           <div className="flex justify-between mt-3">
           {preview && (
             
-            <div className='flex justify-between'>
-            <Delete/>
-            <DownloadButton /> 
-
+            <div className='flex w-full justify-between items-center'>
+             
+              
+              <DownloadButton /> 
+              <Delete/>
             </div>
            ) }
            
             {!preview && (
 
-              <div className='justify-between'>
-              <button className="bg-[#004F59] p-3 rounded-lg text-white" onClick={handlePreview}>Go to preview</button>
+              <div className=' flex justify-between  w-full' >
 
-              <Delete/> 
+              <button className='bg-[#D3EC99] text-[#004F59] py-4 rounded-[50px] px-16' onClick={handleModify}>Modify section</button>
+
+              <button className="bg-[#004F59] py-4 rounded-[50px] px-16 text-white" onClick={handlePreview}>Go to preview</button>
+
               </div>
             ) }
             
