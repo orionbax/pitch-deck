@@ -100,6 +100,7 @@ const Upload = () => {
           setStatus(data.message);
           setUploadedFiles((prev) => [...prev, ...files.map((file) => file.name)]);
           setFiles([]);
+          console.log("uploaded data", data)
         } else {
           setStatus(`Error: ${data.error}`);
         }

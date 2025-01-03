@@ -90,8 +90,15 @@ const GeneratedContent = ({ responses = [], isGenerationComplete }) => {
             <div key={index} className="bg-gray-100 p-4 ">
               <h3 className="text-2xl font-semibold mb-2">{item.slide}</h3>
               {/* Use editedContent if available, otherwise fallback to original content */}
-              <p>{editedContent[item.slide] || item.content}</p>
-
+              <p>
+              {editedContent[item.slide] ||
+                item.content.split("\n").map((line, index) => (
+                  <React.Fragment key={index}>
+                    {line}
+                    <br />
+                  </React.Fragment>
+                ))}
+            </p>
               {editingSlide === item.slide ? (
                 <div className="mt-2 space-y-2">
                   <textarea
