@@ -15,6 +15,7 @@ const GeneratedContent = ({ responses = [], isGenerationComplete }) => {
   const navigate = useNavigate()
 
   const token = localStorage.getItem('authToken');
+  console.log(responses, "REPOSNSES")
 
   const handleModify = () => {
       navigate('/slide')
@@ -87,7 +88,7 @@ const GeneratedContent = ({ responses = [], isGenerationComplete }) => {
         <div className="  overflow-y-auto">
           {responses.map((item, index) => (
             <div key={index} className="bg-gray-100 p-4 ">
-              <h3 className="text-2xl font-semibold">{item.slide}</h3>
+              <h3 className="text-2xl font-semibold mb-2">{item.slide}</h3>
               {/* Use editedContent if available, otherwise fallback to original content */}
               <p>{editedContent[item.slide] || item.content}</p>
 
