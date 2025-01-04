@@ -31,6 +31,7 @@ const Upload = () => {
       fileError: 'Some files are either too large or have unsupported formats.',
       fileTooLarge: 'File size should not exceed 200MB.',
       fileFormatError: 'Unsupported file format. Please upload a PDF, DOCX, DOC, or TXT.',
+      uploadHere:"Click here to browse files"
     },
     no: {
       uploadBoxTitle: 'Støttede formater: PDF, DOCX, DOC, TXT (Maks 200MB)',
@@ -43,6 +44,7 @@ const Upload = () => {
       fileError: 'Noen filer er enten for store eller har ikke støttede formater.',
       fileTooLarge: 'Filstørrelse kan ikke overskride 200MB.',
       fileFormatError: 'Ikke-støttet filformat. Vennligst last opp en PDF, DOCX, DOC eller TXT.',
+      uploadHere:"Klikk her for å bla gjennom filer"
     },
   };
 
@@ -132,6 +134,7 @@ const Upload = () => {
         onClick={() => document.getElementById('file-input').click()}
       >
         <SlCloudUpload size={40} color="#004F59" />
+        <p className="mt-4 text-base text-[#676767]">{currentText.uploadHere}</p>
         <p className="mt-4 text-base text-[#676767]">
           {currentText.uploadBoxTitle}
         </p>
@@ -193,7 +196,7 @@ const Upload = () => {
       {uploadedFiles.length > 0 && (
         <button
   onClick={handleNext}
-  className="mt-6 bg-[#D3EC99] text-[#00383D] py-4 px-36 rounded-3xl hover:bg-[#b1d362] flex items-center justify-center space-x-2"
+  className="mt-6 bg-[#D3EC99] text-[#00383D] py-4 px-36 rounded-3xl text-xl font-bold hover:bg-[#b1d362] flex items-center justify-center space-x-2"
 >
   <span>{currentText.nextButton}</span>
   <svg

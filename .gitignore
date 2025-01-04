@@ -14,17 +14,27 @@
 # Frontend
 !frontend/
 !frontend/public/
+!frontend/public/vbaiLogo.svg
 !frontend/public/pitchdeck.ico
 
 !frontend/src/
 !frontend/src/components
 !frontend/src/components/deleteProject.js
+!frontend/src/components/modal.js
+!frontend/src/components/modal.js
+
+
+
 
 !frontend/src/components/statusSideBar.js
 !frontend/src/pages
 !frontend/src/pages/context/
 !frontend/src/pages/context/phaseContext.js
 !frontend/src/pages/landingPage.js
+!frontend/src/pages/onboarding.js
+!frontend/src/pages/onboardingTips.js
+!frontend/src/pages/onboardingHow.js
+
 !frontend/src/pages/selectSlide.js
 !frontend/src/pages/preview.js
 !frontend/src/components/slideSelection.js

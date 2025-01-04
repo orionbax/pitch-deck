@@ -6,7 +6,7 @@ const DownloadButton = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState(""); // State to hold the success message
-    const {phase, setPhase, baseUrl} = usePhase()
+    const {phase, setPhase, baseUrl, language} = usePhase()
     const handleDownload = async () => {
         const token = localStorage.getItem("authToken");
         const tok = "rZOQf0wJ2xhtOg56h0HmilRAp-BIPfMzfuckGpA1vng";

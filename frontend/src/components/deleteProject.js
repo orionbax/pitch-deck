@@ -66,10 +66,10 @@ const DeleteProjectComponent = () => {
       <div className="flex items-center justify-center gap-4">
         <button
           onClick={handleDelete}
-          className="text-red-500  px-20 py-4 rounded-[50px] disabled:opacity-50"
+          className="bg-[#C0D78C] text-[#00383D] font-bold text-opacity-[60%] py-2 px-10 rounded-lg"
           disabled={loading} // Disable button while loading
         >
-          {loading ? "Deleting..." : "Delete Project"} 
+          {loading ? "Deleting..." : "Yes, Delete"} 
         </button>
         {message && <p className="mt-4 text-black">{message}</p>} {/* Show message */}
       </div>

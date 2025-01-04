@@ -4,6 +4,7 @@ import DownloadButton from './downloadOptions';
 import { usePhase } from '../pages/context/phaseContext';
 import Delete from './deleteProject';
 import { useNavigate } from 'react-router-dom';
+import Modal from './modal';
 
 const GeneratedContent = ({ responses = [], isGenerationComplete, isProcessing }) => {
   const [slides, setSlides] = useState(responses);
@@ -14,16 +15,31 @@ const GeneratedContent = ({ responses = [], isGenerationComplete, isProcessing }
   const [loadingSlide, setLoadingSlide] = useState(null); // Tracks which slide is being edited
   const { phase, setPhase, baseUrl } = usePhase();
   const navigate = useNavigate();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  
   const shouldShowMessage = responses.length === 0 || !isGenerationComplete;
 
 
   const token = localStorage.getItem('authToken');
 
-  const handleModify = () => {
-    console.log("clicked")
-  
-    navigate('/slide');
+  const handleDeleteConfirm = () => {
+    setShowDeleteModal(false); // Hide modal after confirmation
+    // Perform delete action (e.g., call API to delete the project)
+    console.log('Project deleted');
+  };
 
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false); // Hide modal if canceled
+  };
+
+  const handleModify = () => {
+  
+    window.location.reload();
+
+  };
+
+  const handleDeleteClick = () => {
+    setShowDeleteModal(true); // Show modal
   };
 
   const handleEditRequest = async (slide) => {
@@ -93,7 +109,7 @@ const GeneratedContent = ({ responses = [], isGenerationComplete, isProcessing }
 
       <div className="bg-white my-10 py-10">
         {shouldShowMessage && (
-          <div className="py-8 text-xl font-medium text-[#004F59]">
+          <div className="py-8 pl-3 text-xl font-medium text-[#004F59]">
             AI is analyzing your documents and generating pitch deck content...
           </div>
         )}
@@ -103,12 +119,21 @@ const GeneratedContent = ({ responses = [], isGenerationComplete, isProcessing }
             <div key={index} className="bg-white p-4">
               <h3 className="text-2xl font-semibold mb-2">{item.slide}</h3>
               <p>
-                {(editedContent[item.slide] || item.content).split('\n').map((line, index) => (
-                  <React.Fragment key={index}>
-                    {line}
-                    <br />
-                  </React.Fragment>
-                ))}
+              {
+                (editedContent[item.slide] || item.content)
+                  .split('\n')
+                  .map((line, index) => (
+                    <React.Fragment key={index}>
+                      {/* Check if line contains a '-' at the start and remove it */}
+                      <li className="list-none pl-5 flex items-center">
+                        <span className="before:content-['•'] before:text-black before:text-2xl before:mr-2">
+                          {line.trim().startsWith('-') ? line.trim().slice(1).trim() : line}
+                        </span>
+                      </li>
+                    </React.Fragment>
+                  ))
+              }
+              
               </p>
               {editingSlide === item.slide ? (
                 <div className="mt-2 space-y-2">
@@ -128,7 +153,7 @@ const GeneratedContent = ({ responses = [], isGenerationComplete, isProcessing }
                     </button>
 
                     <button
-                      className="text-white bg-[#548062] px-4 py-2 rounded-md"
+                      className="text-[#004F59] bg-[#D3EC99] px-4 py-2 rounded-md"
                       onClick={() => {
                         setEditingSlide(null); // Cancel editing
                         setEditRequest('');
@@ -157,12 +182,17 @@ const GeneratedContent = ({ responses = [], isGenerationComplete, isProcessing }
       <div>
         {isGenerationComplete && (
           <div className="flex justify-between mt-3">
-            {preview && (
-              <div className="flex w-full justify-between items-center">
-                <DownloadButton />
-                <Delete />
-              </div>
-            )}
+          {preview && (
+            <div className="flex w-full justify-between items-center">
+              <DownloadButton />
+              <button
+                className="text-red-500  py-2 px-5 rounded-lg"
+                onClick={handleDeleteClick}
+              >
+                Delete
+              </button>
+            </div>
+          )}
 
             {!preview && (
               <div className="flex gap-16 w-full">
@@ -184,6 +214,14 @@ const GeneratedContent = ({ responses = [], isGenerationComplete, isProcessing }
           </div>
         )}
       </div>
+
+      {showDeleteModal && (
+        <Modal
+          message="Are you sure you want to delete this Project?"
+          onConfirm={handleDeleteConfirm}
+          onCancel={handleDeleteCancel}
+        />
+      )}
     </div>
   );
 };
