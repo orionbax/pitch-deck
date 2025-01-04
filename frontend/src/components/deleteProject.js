@@ -48,6 +48,7 @@ const DeleteProjectComponent = () => {
 
       if (response.ok) {
         setMessage(`Project with ID "${project_id}" deleted successfully.`);
+        localStorage.removeItem("authToken");
         setStatus(true)
         navigate('/')
       } else {
@@ -65,7 +66,7 @@ const DeleteProjectComponent = () => {
       <div className="flex items-center justify-center gap-4">
         <button
           onClick={handleDelete}
-          className="bg-red-500 text-white px-20 py-4 rounded-[50px] disabled:opacity-50"
+          className="text-red-500  px-20 py-4 rounded-[50px] disabled:opacity-50"
           disabled={loading} // Disable button while loading
         >
           {loading ? "Deleting..." : "Delete Project"} 

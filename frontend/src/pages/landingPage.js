@@ -5,11 +5,12 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { usePhase } from './context/phaseContext';
 
+
 const LandingPage = () => {
   const [projectName, setProjectName] = useState('project');
   const [projectData, setProjectData] = useState(null);
   const [error, setError] = useState('');
-  const {setProject_id}  = usePhase()
+  const {setProject_id, baseUrl, setSlides}  = usePhase()
   const navigate = useNavigate();
 
   const handleCreateProject = async () => {
@@ -17,19 +18,29 @@ const LandingPage = () => {
       setError('Project ID is required');
       return;
     }
-
+  // `${baseUrl}/edit_slide`
     try {
       console.log('Sending request with project name:', projectName); // Log the project name
-      const response = await axios.post('http://127.0.0.1:5000/create_project', {
+      const response = await axios.post( `${baseUrl}/create_project`, {
         project_id: projectName,
       });
       console.log('Response received:', response.data); // Log the response data
       setProjectData(response.data);
       const token = response.data.token; // Assuming the token is in the `token` field.
       console.log('Token received:', token);
-      localStorage.setItem('authToken', token); 
+      if (token) {
+        // localStorage.setItem('token', token);
+        localStorage.setItem('authToken', token);
+
+        console.log('Token saved to localStorage', token);
+      } else {
+        console.log('No token received in response');
+      }
+
+      
       setError('');
       setProject_id(projectName)
+      setSlides(Object.keys(response.data.state.slides).length)
       navigate('/upload', { state: { projectData: response.data } });
     } catch (err) {
       console.error('Error occurred:', err); // Log the error if there's an issue

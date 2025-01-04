@@ -19,7 +19,7 @@ const Layout = ({ children }) => {
   };
 
   return (
-    <div className="flex flex-col sm:flex-row h-screen">
+    <div className="flex flex-col sm:flex-row h-screen bg-[#F1F1F1]">
       {/* Hamburger Menu for small screens */}
       {!isHomePage && (
         <button 

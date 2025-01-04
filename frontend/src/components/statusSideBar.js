@@ -58,10 +58,10 @@ const StatusSideBar = () => {
       <div className="px-4 sm:px-10">
         <img src={vbailogo} alt="logo" className="w-36 sm:w-40 mx-auto sm:mx-0" />
 
-        <div className="my-3">
-          <h1 className="text-[#548062] text-base font-semibold my-1">{translations.languageLabel[selectedLanguage]}</h1>
+        <div className="my-5">
+          <h1 className="text-white text-base font-semibold my-1">{translations.languageLabel[selectedLanguage]}</h1>
           <select
-            className="bg-[#004F59] text-white w-full sm:w-auto"
+            className="bg-[#004F59] text-white font-normal w-full sm:w-auto"
             value={selectedLanguage}
             onChange={handleLanguageChange}
           >
@@ -70,7 +70,7 @@ const StatusSideBar = () => {
           </select>
         </div>
 
-        <div className="my-3">
+        <div className="my-5">
           <h1 className="text-base text-white font-normal mb-4">{translations.editModeLabel[selectedLanguage]}</h1>
 
           <div className="mb-2">
@@ -88,7 +88,7 @@ const StatusSideBar = () => {
               />
               <div className={`w-5 h-5 border rounded-full flex items-center justify-center ${selectedOption === 'structured-editing' ? 'bg-[#D3EC99]' : 'bg-transparent'}`}>
                 {selectedOption === 'structured-editing' && (
-                  <div className="w-3 h-3 rounded-full bg-black"></div>
+                  <div className="w-3 h-3 rounded-full bg-[#D3EC99]"></div>
                 )}
               </div>
               <span>{translations.structuredEditing[selectedLanguage]}</span>
@@ -110,7 +110,7 @@ const StatusSideBar = () => {
               />
               <div className={`w-5 h-5 border rounded-full flex items-center justify-center ${selectedOption === 'guided-feedback' ? 'bg-[#D3EC99]' : 'bg-transparent'}`}>
                 {selectedOption === 'guided-feedback' && (
-                  <div className="w-3 h-3 rounded-full bg-black"></div>
+                  <div className="w-3 h-3 rounded-full bg-[#D3EC99]"></div>
                 )}
               </div>
               <span>{translations.guidedFeedback[selectedLanguage]}</span>
@@ -120,7 +120,10 @@ const StatusSideBar = () => {
 
         {/* Phase indication */}
         <Phase />
+        <div className='my-5'>
         <Navigation />
+
+        </div>
       </div>
     </div>
   );

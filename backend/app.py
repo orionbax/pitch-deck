@@ -370,7 +370,7 @@ def process_slide(documents, thread_id, slide, assistant_id):
 @verify_token
 def edit_slide():
     project = request.project
-    slide = request.json.get('slide').lower().replace(' ', '_')
+    slide = request.json.get('slide')
     edit_request = request.json.get('edit_request')
     
     # Get current slide content from database

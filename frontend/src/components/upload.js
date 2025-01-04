@@ -5,13 +5,14 @@ import { useNavigate } from 'react-router-dom';
 import { usePhase } from '../pages/context/phaseContext';
 
 const Upload = () => {
-  const { setPhase, language, baseUrl } = usePhase();
+  const { setPhase, language, baseUrl, setSlides } = usePhase();
   const [files, setFiles] = useState([]);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [status, setStatus] = useState(null);
   const [fileError, setFileError] = useState('');
   const [isUploading, setIsUploading] = useState(false); // Track uploading state
   const token = localStorage.getItem('authToken');
+  console.log("token downlaod", token)
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -102,7 +103,8 @@ const Upload = () => {
           setFiles([]);
           console.log("uploaded data", data)
         } else {
-          setStatus(`Error: ${data.error}`);
+          console.log("token check", token)
+          setStatus(`Error msg: ${data.error}`);
         }
       })
       .catch((err) => {
@@ -114,6 +116,7 @@ const Upload = () => {
   };
 
   const handleNext = () => {
+    setSlides(1)
     setPhase("slide-selection");
     navigate('/slide');
   };
@@ -123,7 +126,7 @@ const Upload = () => {
   };
 
   return (
-    <div className="file-uploader p-4">
+    <div className="file-uploader py-4">
       <div
         className="upload-box border-2 border-dashed flex flex-col justify-center items-center border-gray-300 p-10 text-center cursor-pointer bg-white"
         onClick={() => document.getElementById('file-input').click()}
@@ -189,11 +192,26 @@ const Upload = () => {
 
       {uploadedFiles.length > 0 && (
         <button
-          onClick={handleNext}
-          className="mt-6 bg-[#D3EC99] text-[#00383D] py-4 px-36 rounded-3xl hover:bg-[#b1d362]"
-        >
-          {currentText.nextButton}
-        </button>
+  onClick={handleNext}
+  className="mt-6 bg-[#D3EC99] text-[#00383D] py-4 px-36 rounded-3xl hover:bg-[#b1d362] flex items-center justify-center space-x-2"
+>
+  <span>{currentText.nextButton}</span>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth="2"
+    stroke="currentColor"
+    className="w-5 h-5"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M13.5 4.5L20.5 11.5L13.5 18.5"
+    />
+  </svg>
+</button>
+
       )}
     </div>
   );

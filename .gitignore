@@ -14,6 +14,8 @@
 # Frontend
 !frontend/
 !frontend/public/
+!frontend/public/pitchdeck.ico
+
 !frontend/src/
 !frontend/src/components
 !frontend/src/components/deleteProject.js
