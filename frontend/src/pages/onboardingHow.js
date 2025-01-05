@@ -20,7 +20,7 @@ const OnboardingStep = () => {
         <h1 className="text-4xl font-normal text-gray-800">Pitch Deck AI</h1>
       </div>
 
-      <div className="border-l-4 border-[#00383D] w-full sm:h-3/4 sm:border-l-4 sm:border-b-0 border-b-4 sm:w-px"></div>
+      <div className="border-l-4 border-[#00383D] w-full sm:h-[80%] sm:border-l-4 sm:border-b-0 border-b-4 sm:w-px"></div>
 
       {/* Right Section */}
       <div className="w-full sm:w-1/2 py-10 flex flex-col items-center justify-center px-4 sm:px-10">
@@ -47,13 +47,14 @@ const OnboardingStep = () => {
               Customizable slides with smart content suggestions.
             </li>
           </ul>
-          <button
-            onClick={handleClick}
-            className="mt-6 px-14 w-3/4 py-4 rounded-[50px] bg-[#D3EC99] text-[#002C31] font-bold text-xl"
-          >
-            Next →
-          </button>
+        
         </div>
+        <button
+        onClick={handleClick}
+        className="mt-6 px-14 w-[60%] py-4 rounded-[50px] bg-[#D3EC99] text-[#002C31] font-bold text-xl"
+      >
+        Next →
+      </button>
       </div>
     </div>
   );

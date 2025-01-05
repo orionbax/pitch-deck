@@ -15,7 +15,7 @@ const OnboardingHowItWorks = () => {
 
 
   return (
-    <div className="flex flex-col sm:flex-row h-screen items-center justify-center bg-teal-900">
+    <div className="flex flex-col sm:flex-row h-screen items-center justify-center bg-white">
       {/* Left Section */}
       <div className="w-full sm:w-1/2 h-1/2 sm:h-full flex flex-col items-center justify-center bg-white p-6 sm:p-10">
         <img
@@ -29,7 +29,7 @@ const OnboardingHowItWorks = () => {
       </div>
 
       {/* Divider */}
-      <div className="w-full h-2 sm:h-3/4 sm:w-px bg-white sm:border-l-4 border-t-4 border-[#00383D] sm:border-t-0"></div>
+      <div className="w-full h-2 rounded-[5px] sm:h-3/4 sm:w-px bg-white sm:border-l-4 border-t-4 border-[#00383D] sm:border-t-0"></div>
 
       {/* Right Section */}
 
@@ -37,9 +37,9 @@ const OnboardingHowItWorks = () => {
       
         <div className="w-full sm:w-3/4 flex flex-col items-center">
           <button onClick={handleBack} className="mb-6 flex items-center justify-center text-teal-600 self-start bg-[#D3EC99] w-10 h-10 rounded-full ">
-            <span className="text-xl">&#8592;</span>
+            <span className="text-xl rounded-lg">&#8592;</span>
           </button>
-          <div className="flex flex-col items-center shadow-lg py-10 px-6 w-full rounded-[20px]">
+          <div className="flex flex-col items-center shadow-xl shadow-slate-400 py-10 px-6 w-full rounded-[20px]">
             <h2 className="mb-6 text-2xl sm:text-3xl font-semibold text-[#004F59] text-center">
               How it works.
             </h2>
@@ -52,7 +52,7 @@ const OnboardingHowItWorks = () => {
                 <span className="mr-2 text-yellow-500">&#9733;</span>
                 Upload Documents
               </li>
-              <li className="flex items-center shadow-md shadow-slate-400 rounded-3xl pl-4 pr-6 py-3">
+              <li className="flex items-center shadow-md  shadow-slate-400 rounded-3xl pl-4 pr-6 py-3">
                 <span className="mr-2 text-yellow-500">&#9733;</span>
                 Select & Customize Slides
               </li>
@@ -60,7 +60,7 @@ const OnboardingHowItWorks = () => {
           </div>
           <button
             onClick={handleClick}
-            className="mt-8 px-10 sm:px-14 w-full py-4 rounded-[50px] bg-[#D3EC99] text-[#002C31] font-bold text-lg sm:text-xl"
+            className="mt-8 px-10 sm:px-14 w-3/4 py-4 rounded-[50px] bg-[#D3EC99] text-[#002C31] font-bold text-lg sm:text-xl"
           >
             Next →
           </button>

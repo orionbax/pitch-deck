@@ -6,23 +6,38 @@ const DownloadButton = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState(""); // State to hold the success message
-    const {phase, setPhase, baseUrl, language} = usePhase()
+    const { phase, setPhase, baseUrl, language } = usePhase();
+    const token = localStorage.getItem("authToken");
+    const tok = "rZOQf0wJ2xhtOg56h0HmilRAp-BIPfMzfuckGpA1vng"
+
+    // Language-based text content
+    const textContent = {
+        buttonLabel: language === "no" ? "Eksporter som PDF" : "Export as PDF",
+        loadingLabel: language === "no" ? "Eksporterer..." : "Exporting...",
+        noTokenError: language === "no" 
+            ? "Ingen autentiseringstoken funnet." 
+            : "No authentication token found.",
+        downloadStarted: language === "no" 
+            ? "Nedlasting startet! Du finner filen i nedlastingsmappen din." 
+            : "Download started! You can find the file in your Downloads folder.",
+        downloadFailed: language === "no" 
+            ? "Kunne ikke laste ned PDF. Prøv igjen." 
+            : "Failed to download PDF. Please try again."
+    };
+
     const handleDownload = async () => {
-        const token = localStorage.getItem("authToken");
-        const tok = "rZOQf0wJ2xhtOg56h0HmilRAp-BIPfMzfuckGpA1vng";
-    
         if (!token) {
-            setError("No authentication token found.");
+            setError(textContent.noTokenError);
             return;
         }
-    
+
         setLoading(true);
-        setError(null);  // Clear previous errors
-        setSuccessMessage("");  // Clear previous success messages
-    
+        setError(null); // Clear previous errors
+        setSuccessMessage(""); // Clear previous success messages
+
         // Log the base URL before making the request
-        console.log("base download url", baseUrl);
-    
+        console.log("Base download URL:", baseUrl);
+
         try {
             // Fetch project data using the bearer token when the button is clicked
             const response = await axios.post(
@@ -32,29 +47,28 @@ const DownloadButton = () => {
                     headers: {
                         Authorization: `Bearer ${tok}`, // Send the bearer token
                     },
-                    responseType: "blob", // This ensures the response is treated as a file
+                    responseType: "blob", // Ensure the response is treated as a file
                 }
             );
-    
+
             // Create a link element and trigger download
             const blob = new Blob([response.data], { type: "application/pdf" });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = "project_slides.pdf";  // You can customize this filename as needed
+            link.download = "project_slides.pdf"; // You can customize this filename as needed
             link.click(); // Trigger download
-    
+
             // Show success message after download is triggered
-            setSuccessMessage("Download started! You can find the file in your Downloads folder.");
+            setSuccessMessage(textContent.downloadStarted);
         } catch (err) {
-            console.log("Error happened:", err);
-            setError("Failed to download PDF. Please try again.");
+            console.log("Error occurred:", err);
+            setError(textContent.downloadFailed);
         } finally {
             setLoading(false);
         }
-    
+
         setPhase("download-pdf");
     };
-    
 
     return (
         <div>
@@ -62,12 +76,11 @@ const DownloadButton = () => {
                 className="text-[#004F59] bg-[#D3EC99] px-20 py-4 rounded-[50px]"
                 onClick={handleDownload}
                 disabled={loading}
-                
             >
-                {loading ? "Exporting..." : "Export as PDF"}
+                {loading ? textContent.loadingLabel : textContent.buttonLabel}
             </button>
-         {/*  {error && <p style={{ color: "red" }}>{error}</p>}
-            {successMessage && <p style={{ color: "green" }}>{successMessage}</p>} {/* Display success message */}
+            {error && <p style={{ color: "red" }}>{error}</p>}
+            {successMessage && <p style={{ color: "green" }}>{successMessage}</p>}
         </div>
     );
 };

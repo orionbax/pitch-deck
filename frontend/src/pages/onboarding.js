@@ -21,7 +21,7 @@ const Onboarding = () => {
       <div className="h-2 sm:h-3/4 sm:w-px sm:border-l-4 border-t-4 sm:border-t-0 border-teal-900 rounded-md"></div>
 
       {/* Right Section */}
-      <div className="w-full sm:w-1/2 h-1/2 sm:h-full bg-white p-6 sm:p-10 flex flex-col justify-center">
+      <div className="w-full sm:w-1/2 h-1/2 sm:h-full bg-white p-6 sm:p-10 flex flex-col justify-center my-6 mx-16">
         <button
           className="mb-6 flex items-center justify-center text-teal-600 bg-[#D3EC99] w-10 h-10 rounded-full"
           onClick={() => {
