@@ -80,7 +80,6 @@ const DownloadButton = () => {
                 {loading ? textContent.loadingLabel : textContent.buttonLabel}
             </button>
             {error && <p style={{ color: "red" }}>{error}</p>}
-            {successMessage && <p style={{ color: "green" }}>{successMessage}</p>}
         </div>
     );
 };
