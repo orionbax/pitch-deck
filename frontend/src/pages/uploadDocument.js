@@ -10,9 +10,9 @@ const UploadDocument = () => {
   const navigate = useNavigate()
 
    useEffect(() => {
-      const token = localStorage.getItem('token'); // Get the token from localStorage
+      const token = localStorage.getItem('authToken'); // Get the token from localStorage
       if (!token) {
-        navigate('/'); // Redirect to home if no token is found
+        navigate('/project'); // Redirect to home if no token is found
       }
     }, );
 

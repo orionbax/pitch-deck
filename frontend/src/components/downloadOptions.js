@@ -8,7 +8,7 @@ const DownloadButton = () => {
     const [successMessage, setSuccessMessage] = useState(""); // State to hold the success message
     const { phase, setPhase, baseUrl, language } = usePhase();
     const token = localStorage.getItem("authToken");
-    const tok = "rZOQf0wJ2xhtOg56h0HmilRAp-BIPfMzfuckGpA1vng"
+    // const tok = "rZOQf0wJ2xhtOg56h0HmilRAp-BIPfMzfuckGpA1vng"
 
     // Language-based text content
     const textContent = {
@@ -45,7 +45,7 @@ const DownloadButton = () => {
                 {},
                 {
                     headers: {
-                        Authorization: `Bearer ${tok}`, // Send the bearer token
+                        Authorization: `Bearer ${token}`, // Send the bearer token
                     },
                     responseType: "blob", // Ensure the response is treated as a file
                 }
