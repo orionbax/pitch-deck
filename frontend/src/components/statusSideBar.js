@@ -1,12 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import vbailogo from "../vbailogo.svg";
 import Phase from './phase';
 import Navigation from './navigation';
+import { usePhase } from '../pages/context/phaseContext';
+import translations from './translation'; // Import the translations
 
 const StatusSideBar = () => {
   const token = localStorage.getItem('authToken');
   const [selectedLanguage, setSelectedLanguage] = useState("en"); // default to English
-  const [selectedOption, setSelectedOption] = useState(null);
+  const [selectedOption, setSelectedOption] = useState("structured-editing"); // Default to structured-editing
+  const { setEditMode, language, set_language , baseUrl} = usePhase();
+
+  // Syncing local state with phase context
+  useEffect(() => {
+    setEditMode(selectedOption);
+    set_language(selectedLanguage);
+    console.log("lang", language);
+  }, [selectedOption, setEditMode, selectedLanguage, set_language, language]);
 
   const handleOptionChange = (option) => {
     if (selectedOption === option) {
@@ -21,7 +31,7 @@ const StatusSideBar = () => {
     setSelectedLanguage(newLanguage);
 
     try {
-      const response = await fetch('http://127.0.0.1:5000/set_language', {
+      const response = await fetch(`${baseUrl}/set_language`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -34,9 +44,9 @@ const StatusSideBar = () => {
       const data = await response.json();
 
       if (data.status === 'success') {
-        console.log(`Language successfully set to ${newLanguage}`);
+        console.log(`${translations.languageSuccessMessage[newLanguage]}: ${newLanguage}`);
       } else {
-        console.error('Failed to set language:', data.error);
+        console.error(`${translations.languageErrorMessage[newLanguage]}: ${data.error}`);
       }
     } catch (error) {
       console.error('Error changing language:', error);
@@ -44,14 +54,14 @@ const StatusSideBar = () => {
   };
 
   return (
-    <div className='w-64 h-full bg-[#004F59] flex flex-col py-3'>
-      <div className='px-10'>
-        <img src={vbailogo} alt='logo' className='w-40' />
+    <div className="w-full sm:w-64 h-full bg-[#004F59] flex flex-col py-5">
+      <div className="px-4 sm:px-10">
+        <img src={vbailogo} alt="logo" className="w-36 sm:w-40 mx-auto sm:mx-0" />
 
-        <div className="my-3">
-          <h1 className='text-[#548062] text-base font-semibold my-1'>Language</h1>
+        <div className="my-5">
+          <h1 className="text-white text-base font-semibold my-1">{translations.languageLabel[selectedLanguage]}</h1>
           <select
-            className='bg-[#004F59] text-white'
+            className="bg-[#004F59] text-white font-normal w-full sm:w-auto"
             value={selectedLanguage}
             onChange={handleLanguageChange}
           >
@@ -60,8 +70,8 @@ const StatusSideBar = () => {
           </select>
         </div>
 
-        <div className="my-3">
-          <h1 className="text-base text-white font-normal mb-4">Edit Mode</h1>
+        <div className="my-5">
+          <h1 className="text-base text-white font-normal mb-4">{translations.editModeLabel[selectedLanguage]}</h1>
 
           <div className="mb-2">
             <label
@@ -78,10 +88,10 @@ const StatusSideBar = () => {
               />
               <div className={`w-5 h-5 border rounded-full flex items-center justify-center ${selectedOption === 'structured-editing' ? 'bg-[#D3EC99]' : 'bg-transparent'}`}>
                 {selectedOption === 'structured-editing' && (
-                  <div className="w-3 h-3 rounded-full bg-black"></div>
+                  <div className="w-3 h-3 rounded-full bg-[#D3EC99]"></div>
                 )}
               </div>
-              <span>Structured Editing</span>
+              <span>{translations.structuredEditing[selectedLanguage]}</span>
             </label>
           </div>
 
@@ -100,20 +110,23 @@ const StatusSideBar = () => {
               />
               <div className={`w-5 h-5 border rounded-full flex items-center justify-center ${selectedOption === 'guided-feedback' ? 'bg-[#D3EC99]' : 'bg-transparent'}`}>
                 {selectedOption === 'guided-feedback' && (
-                  <div className="w-3 h-3 rounded-full bg-black"></div>
+                  <div className="w-3 h-3 rounded-full bg-[#D3EC99]"></div>
                 )}
               </div>
-              <span>Guided Feedbacks</span>
+              <span>{translations.guidedFeedback[selectedLanguage]}</span>
             </label>
           </div>
         </div>
 
         {/* Phase indication */}
         <Phase />
+        <div className='my-5'>
         <Navigation />
+
+        </div>
       </div>
     </div>
   );
-}
+};
 
 export default StatusSideBar;
